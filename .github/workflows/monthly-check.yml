@@ -1,0 +1,68 @@
+name: Monthly freshness and link check
+
+# SPEC 9.3：月次でリンク切れと verifiedAt の経過日数を検査し、Issue を起票する。
+# 事実の自動更新は行わない。
+on:
+  schedule:
+    - cron: '0 0 1 * *' # 毎月1日 00:00 UTC（09:00 JST）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Check links
+        id: links
+        continue-on-error: true
+        run: node scripts/check-links.ts --report reports/links.md
+
+      - name: Check freshness
+        id: freshness
+        continue-on-error: true
+        run: node scripts/check-freshness.ts --report reports/freshness.md --fail-over 180
+
+      - name: Compose issue body
+        id: body
+        run: |
+          {
+            echo "自動検査の結果です。値を確認して \`verifiedAt\` を更新するか、出典を差し替えてください。手順は docs/CONTRIBUTING.md の 2 を参照。"
+            echo
+            cat reports/links.md
+            echo
+            cat reports/freshness.md
+          } > reports/issue.md
+          if [ "${{ steps.links.outcome }}" = "failure" ] || [ "${{ steps.freshness.outcome }}" = "failure" ]; then
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create issue
+        if: steps.body.outputs.needed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('reports/issue.md', 'utf8');
+            const date = new Date().toISOString().slice(0, 7);
+            const title = `月次検査 ${date}：リンク切れ・要再確認`;
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: 'freshness',
+            });
+            const dup = existing.find((i) => i.title === title);
+            if (dup) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: dup.number, body });
+            } else {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['freshness'] });
+            }

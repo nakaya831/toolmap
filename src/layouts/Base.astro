@@ -1,0 +1,74 @@
+---
+import '@/styles/global.css';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '@/config';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** ページ全体を検索対象にするか（詳細ページのみ true） */
+  searchable?: boolean;
+}
+
+const { title, description = SITE_DESCRIPTION, searchable = false } = Astro.props;
+const fullTitle = title === SITE_NAME ? `${SITE_NAME}｜${SITE_TAGLINE}` : `${title}｜${SITE_NAME}`;
+const path = Astro.url.pathname;
+const canonical = new URL(path, Astro.site);
+const buildDate = new Date();
+
+const NAV = [
+  { href: '/scenarios/', label: '課題から' },
+  { href: '/categories/', label: '分野から' },
+  { href: '/capabilities/', label: '能力から' },
+  { href: '/search/', label: '検索' },
+  { href: '/about/', label: 'このサイト' },
+];
+const isCurrent = (href: string) => path === href || (href !== '/' && path.startsWith(href));
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/og.svg', Astro.site)} />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body>
+    <a class="skip" href="#main">本文へ移動</a>
+    <header class="site-header" data-pagefind-ignore>
+      <div class="site-header__in">
+        <a class="brand" href="/">{SITE_NAME}<small>{SITE_TAGLINE}</small></a>
+        <nav class="nav" aria-label="サイト内">
+          {
+            NAV.map((n) => (
+              <a href={n.href} aria-current={isCurrent(n.href) ? 'page' : undefined}>
+                {n.label}
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </header>
+    <main id="main" data-pagefind-body={searchable ? '' : undefined}>
+      <slot />
+    </main>
+    <footer class="site-footer" data-pagefind-ignore>
+      <div class="site-footer__in">
+        <span>{SITE_NAME}：制約と出典つきの図鑑。使い方は公式ドキュメントへ。</span>
+        <a href="/about/">掲載基準・免責</a>
+        <span>ビルド {buildDate.toISOString().slice(0, 10)}</span>
+      </div>
+    </footer>
+  </body>
+</html>

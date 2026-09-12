@@ -1,0 +1,120 @@
+---
+import Base from '@/layouts/Base.astro';
+import CategoryBadge from '@/components/CategoryBadge.astro';
+import { GROUP_ORDER, LABELS, SITE_DESCRIPTION, SITE_NAME } from '@/config';
+import { capabilityToolCounts, getAll, MIN_TOOLS_FOR_INDEX } from '@/lib/content';
+
+const { tools, capabilities, categories, scenarios } = await getAll();
+const counts = capabilityToolCounts(tools);
+const visibleCaps = capabilities.filter((c) => (counts.get(c.id) ?? 0) >= MIN_TOOLS_FOR_INDEX);
+const toolsPerCategory = new Map<string, number>();
+for (const t of tools)
+  toolsPerCategory.set(t.data.category.id, (toolsPerCategory.get(t.data.category.id) ?? 0) + 1);
+---
+
+<Base title={SITE_NAME} description={SITE_DESCRIPTION}>
+  <div class="stack" style="--flow: 2rem">
+    <header class="stack" style="--flow: 0.5rem">
+      <h1>課題から手段へ。制約つきで。</h1>
+      <p class="lede prose">
+        プログラミングのツール・サービスを、「できること」「できないこと」「限界値」を同じ物差しで並べた図鑑です。使い方は載せません。選ぶために必要な制約と、課題から手段への道筋だけを載せます。
+      </p>
+      <p class="meta">
+        <span>ツール {tools.length}件</span>
+        <span>能力 {visibleCaps.length}件</span>
+        <span>分類 {categories.length}件</span>
+        <span>課題 {scenarios.length}件</span>
+      </p>
+    </header>
+
+    <div class="entrances">
+      <section class="entrance" aria-labelledby="e1">
+        <h2 id="e1"><a href="/scenarios/">課題から</a></h2>
+        <p class="muted">やりたいことはあるが、手段の名前を知らない。</p>
+        <ul>
+          {
+            scenarios.slice(0, 6).map((s) => (
+              <li>
+                <a href={`/scenarios/${s.id}/`}>{s.data.title}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+      <section class="entrance" aria-labelledby="e2">
+        <h2 id="e2"><a href="/categories/">分野から</a></h2>
+        <p class="muted">「データの保存にはどんな種類があるか」を俯瞰する。</p>
+        <ul>
+          {
+            categories.map((c) => (
+              <li>
+                <CategoryBadge id={c.id} name={c.data.name} />
+                <span class="muted"> {toolsPerCategory.get(c.id) ?? 0}件</span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+      <section class="entrance" aria-labelledby="e3">
+        <h2 id="e3"><a href="/search/">名前から</a></h2>
+        <p class="muted">「Terraform とは何か」を、制約込みで30秒で知る。</p>
+        <form class="search-box" action="/search/" method="get" role="search">
+          <label class="vh" for="q">検索語</label>
+          <input id="q" name="q" type="search" placeholder="例：GAS、定期実行、認証" />
+          <button type="submit" class="tag tag--strong" style="cursor:pointer">検索</button>
+        </form>
+        <ul>
+          {
+            tools.slice(0, 6).map((t) => (
+              <li>
+                <a href={`/tools/${t.id}/`}>{t.data.name}</a>
+                <span class="muted"> {t.data.oneLiner}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </div>
+
+    <section class="section" aria-labelledby="map-h">
+      <h2 id="map-h">能力マップ</h2>
+      <p class="muted prose">
+        課題は「必要な能力」に分解できる。能力ごとに、それを持つ手段と選定軸をまとめている。
+      </p>
+      <div class="cols" style="gap: 1rem 2rem; margin-block-start: 1rem">
+        {
+          GROUP_ORDER.map((g) => {
+            const caps = visibleCaps.filter((c) => c.data.group === g);
+            if (caps.length === 0) return null;
+            return (
+              <section aria-labelledby={`g-${g}`}>
+                <h3 id={`g-${g}`} style="border-bottom: 1px solid var(--rule)">
+                  {LABELS.group[g]}
+                </h3>
+                <ul class="map">
+                  {caps.map((c) => (
+                    <li>
+                      <a href={`/capabilities/${c.id}/`}>{c.data.name}</a>
+                      <span class="muted"> {counts.get(c.id)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })
+        }
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .map {
+    list-style: none;
+    padding: 0;
+    font-size: var(--fs-s);
+  }
+  .map li {
+    padding: 0.15rem 0;
+  }
+</style>

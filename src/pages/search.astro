@@ -1,0 +1,76 @@
+---
+import PagefindConfig from 'astro-pagefind/components/PagefindConfig.astro';
+import Base from '@/layouts/Base.astro';
+---
+
+<Base title="検索" description="ツール名・略称・できないこと・制約の項目名から検索。">
+  <div class="stack">
+    <h1>検索</h1>
+    <p class="lede prose">
+      ツール名、略称（GAS、S3、PG など）、一行定義、「できないこと」、制約の項目名、選定判断を対象にしている。使い方の解説は載っていない。
+    </p>
+    <div class="search" id="search">
+      <PagefindConfig lang="ja" excerpt-length="24" />
+      <pagefind-input
+        placeholder="例：定期実行、スプレッドシート、認証"
+        autofocus
+        debounce="150"></pagefind-input>
+      <pagefind-summary default-message="ツール名・略称・やりたいことを入力"></pagefind-summary>
+      <pagefind-results show-images="false" hide-sub-results="true" max-results="30"></pagefind-results>
+    </div>
+    <noscript>
+      <p class="notice">
+        検索には JavaScript が必要です。代わりに <a href="/categories/">分野一覧</a> か
+        <a href="/capabilities/">能力一覧</a> から探してください。
+      </p>
+    </noscript>
+  </div>
+</Base>
+
+<script>
+  // トップや 404 の検索フォームから ?q= で来た場合に語を引き継ぐ
+  const q = new URLSearchParams(location.search).get('q');
+  if (q) {
+    const setTerm = () => {
+      const input = document.querySelector<HTMLInputElement>('pagefind-input input');
+      if (!input) return false;
+      input.value = q;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    };
+    if (!setTerm()) {
+      const obs = new MutationObserver(() => {
+        if (setTerm()) obs.disconnect();
+      });
+      obs.observe(document.getElementById('search')!, { childList: true, subtree: true });
+    }
+  }
+</script>
+
+<style is:global>
+  .search {
+    --pagefind-ui-scale: 0.9;
+    --pagefind-ui-primary: var(--ink);
+    --pagefind-ui-text: var(--ink);
+    --pagefind-ui-background: var(--paper-2);
+    --pagefind-ui-border: var(--ink);
+    --pagefind-ui-tag: var(--paper);
+    --pagefind-ui-border-width: 2px;
+    --pagefind-ui-border-radius: 0;
+    --pagefind-ui-image-border-radius: 0;
+    --pagefind-ui-font: var(--font-sans);
+    max-width: 44rem;
+  }
+  .search a {
+    color: var(--link);
+  }
+  .search mark {
+    background: transparent;
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  .search input {
+    border-radius: 0 !important;
+  }
+</style>

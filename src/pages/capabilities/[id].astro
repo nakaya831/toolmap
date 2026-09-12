@@ -1,0 +1,99 @@
+---
+import { render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import ComparisonTable from '@/components/ComparisonTable.astro';
+import { LABELS } from '@/config';
+import { byId, getAll, toolsWithCapability, type Capability } from '@/lib/content';
+
+export async function getStaticPaths() {
+  const { capabilities } = await getAll();
+  return capabilities.map((c) => ({ params: { id: c.id }, props: { capability: c } }));
+}
+interface Props {
+  capability: Capability;
+}
+const { capability } = Astro.props;
+const { tools, categories, scenarios } = await getAll();
+const list = toolsWithCapability(tools, capability.id);
+const catsById = byId(categories);
+const related = scenarios.filter((s) => s.data.needs.some((n) => n.id === capability.id));
+const { Content } = await render(capability);
+const hasBody = capability.body && capability.body.trim().length > 0;
+---
+
+<Base title={capability.data.name} description={capability.data.question}>
+  <div class="stack" style="--flow: 1.5rem">
+    <header class="stack" style="--flow: 0.5rem">
+      <div class="meta"><span>能力：{LABELS.group[capability.data.group]}</span></div>
+      <h1>{capability.data.name}</h1>
+      <p class="lede">「{capability.data.question}」</p>
+    </header>
+
+    <section class="section mt-0" aria-labelledby="ax-h">
+      <h2 id="ax-h">この能力で選ぶときに見る軸</h2>
+      <ol class="axes">
+        {capability.data.axes.map((a) => <li>{a}</li>)}
+      </ol>
+      <p class="muted" style="font-size: var(--fs-s)">
+        下の表の「主要制約」は各ツールで最も先に当たる制約。軸ごとの値はツール詳細の制約表で確認する。
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="cmp-h">
+      <h2 id="cmp-h">この能力を持つ手段（{list.length}件）</h2>
+      {
+        list.length > 0 ? (
+          <ComparisonTable
+            tools={list}
+            categories={catsById}
+            caption={`${capability.data.name} を持つツールの比較`}
+          />
+        ) : (
+          <p class="muted">まだ掲載ツールがありません。</p>
+        )
+      }
+      {
+        list.length === 1 && (
+          <p class="muted" style="font-size: var(--fs-s)">
+            現在1件のみで比較が成立しないため、索引には表示していない。
+          </p>
+        )
+      }
+    </section>
+
+    {
+      related.length > 0 && (
+        <section class="section" aria-labelledby="sc-h">
+          <h2 id="sc-h">この能力を必要とする課題</h2>
+          <ul>
+            {related.map((s) => (
+              <li>
+                <a href={`/scenarios/${s.id}/`}>{s.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      hasBody && (
+        <section class="section prose">
+          <Content />
+        </section>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .axes {
+    font-weight: 700;
+    columns: 2 14rem;
+    column-gap: 2rem;
+  }
+  .axes li {
+    max-width: none;
+    break-inside: avoid;
+  }
+</style>

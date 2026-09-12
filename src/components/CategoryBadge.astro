@@ -1,0 +1,24 @@
+---
+/** カテゴリを色＋文字で示す。色だけに頼らない（SPEC 第10章） */
+interface Props {
+  id: string;
+  name: string;
+  link?: boolean;
+  bar?: boolean;
+}
+const { id, name, link = true, bar = false } = Astro.props;
+const cls = `cat${bar ? ' cat--bar' : ''}`;
+const style = `--cat: var(--cat-${id})`;
+---
+
+{
+  link ? (
+    <a class={cls} style={style} href={`/categories/${id}/`}>
+      {name}
+    </a>
+  ) : (
+    <span class={cls} style={style}>
+      {name}
+    </span>
+  )
+}

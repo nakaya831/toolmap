@@ -1,0 +1,20 @@
+---
+import Base from '@/layouts/Base.astro';
+---
+
+<Base title="ページが見つかりません" description="存在しないページです。">
+  <div class="stack">
+    <h1>ページが見つかりません</h1>
+    <p class="lede">URL が変わったか、まだ掲載していないツールかもしれません。</p>
+    <form class="search-box" action="/search/" method="get" role="search">
+      <label class="vh" for="q">検索語</label>
+      <input id="q" name="q" type="search" placeholder="ツール名・略称・やりたいこと" />
+      <button type="submit" class="tag tag--strong" style="cursor:pointer">検索</button>
+    </form>
+    <ul>
+      <li><a href="/scenarios/">課題から探す</a></li>
+      <li><a href="/categories/">分野から探す</a></li>
+      <li><a href="/capabilities/">能力から探す</a></li>
+    </ul>
+  </div>
+</Base>

@@ -1,0 +1,43 @@
+---
+import Base from '@/layouts/Base.astro';
+import CapabilityList from '@/components/CapabilityList.astro';
+import { GROUP_ORDER, LABELS } from '@/config';
+import { capabilityToolCounts, getAll, MIN_TOOLS_FOR_INDEX } from '@/lib/content';
+
+const { tools, capabilities } = await getAll();
+const counts = capabilityToolCounts(tools);
+const hiddenCount = capabilities.filter((c) => (counts.get(c.id) ?? 0) < MIN_TOOLS_FOR_INDEX).length;
+---
+
+<Base title="能力から探す" description="「定期的に処理を実行する」のような動詞句の索引。">
+  <div class="stack" style="--flow: 1.5rem">
+    <header class="stack" style="--flow: 0.5rem">
+      <h1>能力から探す</h1>
+      <p class="lede prose">
+        ツール名ではなく「何をしたいか」の動詞句で引く索引。各能力のページに、それを持つ手段の横断比較と、選ぶときに見る軸がある。
+      </p>
+      {
+        hiddenCount > 0 && (
+          <p class="muted" style="font-size: var(--fs-s)">
+            掲載ツールが2件未満の能力 {hiddenCount}件は、比較が成立しないため索引に出していない。
+          </p>
+        )
+      }
+    </header>
+    <div class="cols">
+      {
+        GROUP_ORDER.map((g) => {
+          const caps = capabilities.filter((c) => c.data.group === g);
+          const visible = caps.filter((c) => (counts.get(c.id) ?? 0) >= MIN_TOOLS_FOR_INDEX);
+          if (visible.length === 0) return null;
+          return (
+            <section aria-labelledby={`g-${g}`}>
+              <h2 id={`g-${g}`}>{LABELS.group[g]}</h2>
+              <CapabilityList capabilities={caps} counts={counts} />
+            </section>
+          );
+        })
+      }
+    </div>
+  </div>
+</Base>

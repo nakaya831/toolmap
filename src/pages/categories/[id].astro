@@ -1,0 +1,106 @@
+---
+import { render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import ComparisonTable from '@/components/ComparisonTable.astro';
+import CategoryBadge from '@/components/CategoryBadge.astro';
+import { byId, getAll, toolsInCategory, type Category } from '@/lib/content';
+
+export async function getStaticPaths() {
+  const { categories } = await getAll();
+  return categories.map((c) => ({ params: { id: c.id }, props: { category: c } }));
+}
+interface Props {
+  category: Category;
+}
+const { category } = Astro.props;
+const { tools, capabilities } = await getAll();
+const list = toolsInCategory(tools, category.id);
+const { Content } = await render(category);
+const hasBody = category.body && category.body.trim().length > 0;
+
+// この分類のツールが持つ能力（横断リンク）
+const capsById = byId(capabilities);
+const capCount = new Map<string, number>();
+for (const t of list) for (const c of t.data.can) capCount.set(c.id, (capCount.get(c.id) ?? 0) + 1);
+const caps = [...capCount.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .map(([id, n]) => ({ cap: capsById.get(id)!, n }))
+  .filter((x) => x.cap);
+---
+
+<Base title={category.data.name} description={category.data.question}>
+  <div class="stack" style="--flow: 1.5rem">
+    <header class="stack" style="--flow: 0.5rem">
+      <div class="meta"><CategoryBadge id={category.id} name="分類" bar link={false} /></div>
+      <h1>{category.data.name}</h1>
+      <p class="lede">{category.data.question}</p>
+      <p class="prose">{category.data.summary}</p>
+    </header>
+
+    <section class="section mt-0" aria-labelledby="cmp-h">
+      <h2 id="cmp-h">比較表（{list.length}件）</h2>
+      {
+        list.length > 0 ? (
+          <ComparisonTable tools={list} caption={`${category.data.name} の比較`} />
+        ) : (
+          <p class="muted">この分類にはまだツールが掲載されていません。</p>
+        )
+      }
+    </section>
+
+    {
+      list.length > 0 && (
+        <section class="section" aria-labelledby="v-h">
+          <h2 id="v-h">選定判断の要約</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">ツール</th>
+                  <th scope="col">どういう時に選ぶか／避けるか</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((t) => (
+                  <tr>
+                    <th scope="row" class="nowrap">
+                      <a href={`/tools/${t.id}/`}>{t.data.name}</a>
+                    </th>
+                    <td>{t.data.verdict}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )
+    }
+
+    {
+      caps.length > 0 && (
+        <section class="section" aria-labelledby="caps-h">
+          <h2 id="caps-h">この分類が担う能力</h2>
+          <p class="muted" style="font-size: var(--fs-s)">
+            能力ページでは、他の分類のツールも含めて横断比較できる。
+          </p>
+          <ul>
+            {caps.map(({ cap, n }) => (
+              <li>
+                <a href={`/capabilities/${cap.id}/`}>{cap.data.name}</a>
+                <span class="muted">（この分類から {n}件）</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      hasBody && (
+        <section class="section prose">
+          <Content />
+        </section>
+      )
+    }
+  </div>
+</Base>

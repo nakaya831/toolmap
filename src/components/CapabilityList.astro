@@ -1,0 +1,50 @@
+---
+import type { Capability } from '@/lib/content';
+
+interface Props {
+  capabilities: Capability[];
+  counts?: Map<string, number>;
+  /** 紐づくツールが少ない項目も出すか */
+  showAll?: boolean;
+}
+const { capabilities, counts, showAll = false } = Astro.props;
+---
+
+<ul class="cap-list">
+  {
+    capabilities.map((c) => {
+      const n = counts?.get(c.id) ?? 0;
+      const hidden = counts && n < 2 && !showAll;
+      if (hidden) return null;
+      return (
+        <li>
+          <a href={`/capabilities/${c.id}/`}>{c.data.name}</a>
+          {counts && <span class="muted"> {n}件</span>}
+          <div class="muted">{c.data.question}</div>
+        </li>
+      );
+    })
+  }
+</ul>
+
+<style>
+  .cap-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .cap-list li {
+    max-width: none;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cap-list li:first-child {
+    border-top: 2px solid var(--rule-strong);
+  }
+  .cap-list li a {
+    font-weight: 700;
+  }
+  .cap-list .muted {
+    font-size: var(--fs-s);
+  }
+</style>

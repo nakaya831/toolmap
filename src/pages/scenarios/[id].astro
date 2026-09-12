@@ -1,0 +1,110 @@
+---
+import { render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import ComparisonTable from '@/components/ComparisonTable.astro';
+import { LABELS } from '@/config';
+import { byId, getAll, sortCandidates, sortTools, type Scenario } from '@/lib/content';
+import { formatDate } from '@/lib/freshness';
+
+export async function getStaticPaths() {
+  const { scenarios } = await getAll();
+  return scenarios.map((s) => ({ params: { id: s.id }, props: { scenario: s } }));
+}
+interface Props {
+  scenario: Scenario;
+}
+const { scenario } = Astro.props;
+const s = scenario.data;
+const { tools, capabilities, categories } = await getAll();
+const toolsById = byId(tools);
+const capsById = byId(capabilities);
+const catsById = byId(categories);
+const candidates = sortCandidates(s.candidates);
+const candidateTools = sortTools(
+  candidates.map((c) => toolsById.get(c.tool.id)).filter((t): t is NonNullable<typeof t> => !!t),
+);
+const { Content } = await render(scenario);
+const hasBody = scenario.body && scenario.body.trim().length > 0;
+---
+
+<Base title={s.title} description={`${s.title}：候補 ${candidates.length}件の比較`}>
+  <div class="stack" style="--flow: 1.5rem">
+    <header class="stack" style="--flow: 0.5rem">
+      <div class="meta"><span>課題</span></div>
+      <h1>{s.title}</h1>
+      <p class="lede">
+        必要な能力：
+        {
+          s.needs.map((n, i) => (
+            <>
+              {i > 0 && '、'}
+              <a href={`/capabilities/${n.id}/`}>{capsById.get(n.id)?.data.name ?? n.id}</a>
+            </>
+          ))
+        }
+      </p>
+    </header>
+
+    <section class="section mt-0" aria-labelledby="c-h">
+      <h2 id="c-h">候補と判断</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">適合</th>
+              <th scope="col">候補</th>
+              <th scope="col">理由</th>
+              <th scope="col">主要制約</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              candidates.map((c) => {
+                const t = toolsById.get(c.tool.id);
+                const k = t?.data.constraints[0];
+                return (
+                  <tr>
+                    <td class={`fit fit--${c.fit}`}>{LABELS.fit[c.fit]}</td>
+                    <th scope="row" class="nowrap">
+                      <a href={`/tools/${c.tool.id}/`}>{t?.data.name ?? c.tool.id}</a>
+                    </th>
+                    <td>{c.reason}</td>
+                    <td>
+                      {k && (
+                        <>
+                          <span class="muted">{k.label}：</span>
+                          <span class="value mono">{k.value}</span>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {
+      hasBody && (
+        <section class="section" aria-labelledby="b-h">
+          <h2 id="b-h">分岐の条件</h2>
+          <div class="prose">
+            <Content />
+          </div>
+        </section>
+      )
+    }
+
+    <section class="section" aria-labelledby="cmp-h">
+      <h2 id="cmp-h">候補の比較表</h2>
+      <ComparisonTable tools={candidateTools} categories={catsById} caption={`${s.title} の候補比較`} />
+    </section>
+
+    <footer class="meta">
+      <span>最終更新 {formatDate(s.updatedAt)}</span>
+      <a href="/scenarios/">他の課題を見る</a>
+    </footer>
+  </div>
+</Base>

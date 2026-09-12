@@ -1,0 +1,238 @@
+---
+import { render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import CannotDoList from '@/components/CannotDoList.astro';
+import ConstraintTable from '@/components/ConstraintTable.astro';
+import FreshnessBadge from '@/components/FreshnessBadge.astro';
+import CategoryBadge from '@/components/CategoryBadge.astro';
+import { LABELS } from '@/config';
+import {
+  byId,
+  getAll,
+  referencedBy,
+  scenariosMentioning,
+  verifiedDates,
+  type Tool,
+} from '@/lib/content';
+import { formatDate, freshnessStatus, oldest } from '@/lib/freshness';
+
+export async function getStaticPaths() {
+  const { tools } = await getAll();
+  return tools.map((t) => ({ params: { id: t.id }, props: { tool: t } }));
+}
+
+interface Props {
+  tool: Tool;
+}
+const { tool } = Astro.props;
+const t = tool.data;
+const { Content } = await render(tool);
+const hasBody = tool.body && tool.body.trim().length > 0;
+
+const all = await getAll();
+const capsById = byId(all.capabilities);
+const toolsById = byId(all.tools);
+const category = byId(all.categories).get(t.category.id)!;
+const alsoCited = referencedBy(all.tools, tool.id);
+const scenarios = scenariosMentioning(all.scenarios, tool.id);
+
+const oldestDate = oldest(verifiedDates(tool));
+const pageStale = oldestDate ? freshnessStatus(oldestDate) === 'stale' : false;
+
+const host = (u: string) => {
+  try {
+    return new URL(u).host;
+  } catch {
+    return u;
+  }
+};
+---
+
+<Base title={t.name} description={t.oneLiner} searchable>
+  <article class="stack" style="--flow: 1.25rem">
+    {
+      pageStale && oldestDate && (
+        <div class="notice" role="note" data-pagefind-ignore>
+          <p>
+            このページの一部の事実は <strong>{formatDate(oldestDate)}</strong>{' '}
+            以降に再確認されていません。出典リンク先で現在の値を確かめてください。
+          </p>
+        </div>
+      )
+    }
+
+    <header class="stack" style="--flow: 0.5rem">
+      <div class="meta" data-pagefind-ignore>
+        <CategoryBadge id={category.id} name={category.data.name} bar />
+        <span>{LABELS.layer[t.layer]}</span>
+        <span>成熟度 {LABELS.maturity[t.maturity]}</span>
+        <span>学習コスト {LABELS.learningCost[t.learningCost]}</span>
+      </div>
+      <h1>{t.name}</h1>
+      <p class="lede" style="font-size: var(--fs-l)" data-pagefind-weight="8">{t.oneLiner}</p>
+      {
+        t.aliases.length > 0 && (
+          <p class="muted" style="font-size: var(--fs-s)">
+            別名：{t.aliases.join('、')}
+          </p>
+        )
+      }
+    </header>
+
+    <section class="section mt-0" aria-labelledby="can-h" data-pagefind-ignore>
+      <h2 id="can-h">できること</h2>
+      <ul class="can">
+        {
+          t.can.map((c) => {
+            const cap = capsById.get(c.id);
+            return (
+              <li>
+                <a href={`/capabilities/${c.id}/`}>{cap?.data.name ?? c.id}</a>
+                {cap && <span class="muted">：{cap.data.question}</span>}
+              </li>
+            );
+          })
+        }
+      </ul>
+    </section>
+
+    <CannotDoList items={t.cannot} name={t.name} />
+
+    <section class="section" aria-labelledby="cons-h">
+      <h2 id="cons-h">制約</h2>
+      <p class="muted" style="font-size: var(--fs-s)" data-pagefind-ignore>
+        先頭の行が、このツールで最も先に当たる制約。値はすべて出典の一次情報で確認したもの。
+      </p>
+      <ConstraintTable facts={t.constraints} />
+    </section>
+
+    {
+      t.pitfalls.length > 0 && (
+        <section class="section" aria-labelledby="pit-h" data-pagefind-ignore>
+          <h2 id="pit-h">典型的な落とし穴</h2>
+          <ul>
+            {t.pitfalls.map((p) => (
+              <li>{p}</li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <section class="section" aria-labelledby="cost-h" data-pagefind-ignore>
+      <h2 id="cost-h">コスト</h2>
+      <dl class="kv">
+        <dt>課金モデル</dt>
+        <dd><span class="tag tag--strong">{LABELS.costModel[t.cost.model]}</span></dd>
+        <dt>跳ねる条件</dt>
+        <dd><p>{t.cost.note}</p></dd>
+        <dt>出典</dt>
+        <dd class="src">
+          <a href={t.cost.source} rel="noopener external">{host(t.cost.source)}</a>
+          <FreshnessBadge date={t.cost.verifiedAt} prefix="　検証 " />
+        </dd>
+      </dl>
+    </section>
+
+    {
+      (t.alternatives.length > 0 || alsoCited.length > 0) && (
+        <section class="section" aria-labelledby="alt-h" data-pagefind-ignore>
+          <h2 id="alt-h">代替手段と差分</h2>
+          {t.alternatives.length > 0 && (
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">代替</th>
+                    <th scope="col">何が違うか</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {t.alternatives.map((a) => {
+                    const alt = toolsById.get(a.tool.id);
+                    return (
+                      <tr>
+                        <th scope="row" class="nowrap">
+                          <a href={`/tools/${a.tool.id}/`}>{alt?.data.name ?? a.tool.id}</a>
+                        </th>
+                        <td>{a.difference}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {alsoCited.length > 0 && (
+            <p class="muted" style="font-size: var(--fs-s); margin-block-start: 0.75rem">
+              このツールを代替として挙げているページ：
+              {alsoCited.map((o, i) => (
+                <>
+                  {i > 0 && '、'}
+                  <a href={`/tools/${o.id}/`}>{o.data.name}</a>
+                </>
+              ))}
+            </p>
+          )}
+        </section>
+      )
+    }
+
+    <section class="section" aria-labelledby="verdict-h">
+      <h2 id="verdict-h">選定判断</h2>
+      <p class="prose" data-pagefind-weight="4">{t.verdict}</p>
+    </section>
+
+    {
+      hasBody && (
+        <section class="section prose" aria-label="補足" data-pagefind-ignore>
+          <Content />
+        </section>
+      )
+    }
+
+    {
+      scenarios.length > 0 && (
+        <section class="section" aria-labelledby="sc-h" data-pagefind-ignore>
+          <h2 id="sc-h">このツールが候補に挙がる課題</h2>
+          <ul>
+            {scenarios.map((s) => {
+              const c = s.data.candidates.find((c) => c.tool.id === tool.id)!;
+              return (
+                <li>
+                  <a href={`/scenarios/${s.id}/`}>{s.data.title}</a>
+                  <span class="muted">（{LABELS.fit[c.fit]}）</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )
+    }
+
+    <footer class="section meta" data-pagefind-ignore>
+      <a href={t.officialUrl} rel="noopener external">公式サイト</a>
+      <a href={t.docsUrl} rel="noopener external">公式ドキュメント</a>
+      <span>最終更新 {formatDate(t.updatedAt)}</span>
+      <a href={`/categories/${category.id}/`}>同じ分類のツールと比較する</a>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .can {
+    list-style: none;
+    padding: 0;
+  }
+  .can li {
+    max-width: none;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .can li:first-child {
+    border-top: 2px solid var(--rule-strong);
+  }
+  .can a {
+    font-weight: 700;
+  }
+</style>

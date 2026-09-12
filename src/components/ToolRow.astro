@@ -1,0 +1,29 @@
+---
+import { LABELS } from '@/config';
+import type { Category, Tool } from '@/lib/content';
+import CategoryBadge from './CategoryBadge.astro';
+
+interface Props {
+  tool: Tool;
+  category?: Category;
+  /** 追加の1行（シナリオの理由など） */
+  note?: string;
+}
+const { tool, category, note } = Astro.props;
+const t = tool.data;
+---
+
+<div class="tool-row">
+  <div class="tool-row__name"><a href={`/tools/${tool.id}/`}>{t.name}</a></div>
+  <div>
+    {t.oneLiner}
+    {note && <div class="muted">{note}</div>}
+  </div>
+  <div class="tool-row__meta meta">
+    {category && <CategoryBadge id={category.id} name={category.data.name} />}
+    <span>{LABELS.layer[t.layer]}</span>
+    <span>学習コスト {LABELS.learningCost[t.learningCost]}</span>
+    <span>{LABELS.costModel[t.cost.model]}</span>
+    <span>{LABELS.maturity[t.maturity]}</span>
+  </div>
+</div>

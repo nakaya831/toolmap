@@ -1,0 +1,63 @@
+---
+import { LABELS } from '@/config';
+import type { Category, Tool } from '@/lib/content';
+import CategoryBadge from './CategoryBadge.astro';
+import FreshnessBadge from './FreshnessBadge.astro';
+
+interface Props {
+  tools: Tool[];
+  categories?: Map<string, Category>;
+  caption?: string;
+}
+const { tools, categories, caption } = Astro.props;
+---
+
+<div class="table-wrap">
+  <table class="table compare">
+    {caption && <caption class="vh">{caption}</caption>}
+    <thead>
+      <tr>
+        <th scope="col">ツール</th>
+        {categories && <th scope="col">分類</th>}
+        <th scope="col">種別</th>
+        <th scope="col">学習</th>
+        <th scope="col">料金</th>
+        <th scope="col">成熟</th>
+        <th scope="col">主要制約</th>
+        <th scope="col">検証</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        tools.map((t) => {
+          const c = t.data.constraints[0];
+          const cat = categories?.get(t.data.category.id);
+          return (
+            <tr>
+              <th scope="row">
+                <a href={`/tools/${t.id}/`}>{t.data.name}</a>
+                <div class="muted" style="font-weight:400">
+                  {t.data.oneLiner}
+                </div>
+              </th>
+              {categories && (
+                <td class="nowrap">{cat && <CategoryBadge id={cat.id} name={cat.data.name} />}</td>
+              )}
+              <td class="nowrap">{LABELS.layer[t.data.layer]}</td>
+              <td class="nowrap">{LABELS.learningCost[t.data.learningCost]}</td>
+              <td class="nowrap">{LABELS.costModel[t.data.cost.model]}</td>
+              <td class="nowrap">{LABELS.maturity[t.data.maturity]}</td>
+              <td>
+                <span class="muted">{c.label}：</span>
+                <span class="value">{c.value}</span>
+              </td>
+              <td>
+                <FreshnessBadge date={c.verifiedAt} />
+              </td>
+            </tr>
+          );
+        })
+      }
+    </tbody>
+  </table>
+</div>

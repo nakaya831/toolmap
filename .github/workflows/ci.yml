@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate entries
+        run: node scripts/validate-entries.ts
+      - name: Type check and build
+        run: npm run build
+      - name: Upload site
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  links:
+    # PR ではリンク検査を必須にしない（外部サイトの一時障害で落ちるため）。結果は Summary に出す
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check links
+        run: node scripts/check-links.ts --report reports/links.md
+      - name: Summary
+        if: always()
+        run: cat reports/links.md >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,17 @@
+---
+import { daysSince, formatDate, freshnessStatus } from '@/lib/freshness';
+
+interface Props {
+  date: Date;
+  /** 「検証」「更新」など前置きの語 */
+  prefix?: string;
+}
+const { date, prefix = '' } = Astro.props;
+const status = freshnessStatus(date);
+const days = daysSince(date);
+const label = status === 'stale' ? '要再確認（1年超）' : status === 'warn' ? '要再確認' : '';
+---
+
+<span class={`fresh fresh--${status}`} title={`${days}日前に確認`}>
+  {prefix}<time datetime={formatDate(date)}>{formatDate(date)}</time>{label && ` ${label}`}
+</span>

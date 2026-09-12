@@ -1,0 +1,58 @@
+---
+import FreshnessBadge from './FreshnessBadge.astro';
+
+interface Fact {
+  label: string;
+  value: string;
+  impact: string;
+  source: string;
+  verifiedAt: Date;
+}
+interface Props {
+  facts: Fact[];
+}
+const { facts } = Astro.props;
+const host = (u: string) => {
+  try {
+    return new URL(u).host;
+  } catch {
+    return u;
+  }
+};
+---
+
+<div class="table-wrap">
+  <table class="table constraints">
+    <thead>
+      <tr>
+        <th scope="col">項目</th>
+        <th scope="col">値</th>
+        <th scope="col">影響</th>
+        <th scope="col">出典</th>
+        <th scope="col">検証日</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        facts.map((f, i) => (
+          <tr>
+            <th scope="row">
+              {f.label}
+              {i === 0 && <span class="vh">（主要制約）</span>}
+            </th>
+            <td class="mono" data-label="値">{f.value}</td>
+            <td data-label="影響">{f.impact}</td>
+            <td class="src" data-label="出典">
+              <a href={f.source} rel="noopener external">
+                {host(f.source)}
+              </a>
+            </td>
+            <td data-label="検証日">
+              <FreshnessBadge date={f.verifiedAt} />
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>

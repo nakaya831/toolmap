@@ -1,0 +1,15 @@
+---
+/** できないこと。詳細ページで最も目立つブロック（SPEC 6.2） */
+interface Props {
+  items: string[];
+  name: string;
+}
+const { items, name } = Astro.props;
+---
+
+<section class="cannot" aria-labelledby="cannot-h">
+  <h2 id="cannot-h">{name} ができないこと</h2>
+  <ul>
+    {items.map((i) => <li>{i}</li>)}
+  </ul>
+</section>
