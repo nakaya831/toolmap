@@ -1,7 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import CategoryBadge from '@/components/CategoryBadge.astro';
-import { LABELS } from '@/config';
+import { LABELS, LAYER_DESCRIPTIONS, LAYER_ORDER } from '@/config';
 import { getAll, sortToolsForLearning, toolsInCategory } from '@/lib/content';
 
 const { tools, categories } = await getAll();
@@ -30,34 +30,45 @@ const { tools, categories } = await getAll();
                 {c.data.plain}
               </span>
             </h2>
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th scope="col">ツール</th>
-                    <th scope="col">一行で言うと</th>
-                    <th scope="col">種別</th>
-                    <th scope="col">学習</th>
-                    <th scope="col">料金</th>
-                    <th scope="col">別名</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {list.map((t) => (
-                    <tr>
-                      <th scope="row" class="nowrap">
-                        <a href={`/tools/${t.id}/`}>{t.data.name}</a>
-                      </th>
-                      <td>{t.data.oneLiner}</td>
-                      <td class="nowrap">{LABELS.layer[t.data.layer]}</td>
-                      <td class="nowrap">{LABELS.learningCost[t.data.learningCost]}</td>
-                      <td class="nowrap">{LABELS.costModel[t.data.cost.model]}</td>
-                      <td class="muted">{t.data.aliases.join('、')}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {LAYER_ORDER.map((layer) => {
+              const sub = list.filter((t) => t.data.layer === layer);
+              if (sub.length === 0) return null;
+              return (
+                <section class="layer-group">
+                  <h3 class="layer-group__h">
+                    {LABELS.layer[layer]}
+                    <span class="muted">（{sub.length}件）</span>
+                    <small class="muted">{LAYER_DESCRIPTIONS[layer]}</small>
+                  </h3>
+                  <div class="table-wrap">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th scope="col">ツール</th>
+                          <th scope="col">一行で言うと</th>
+                          <th scope="col">学習</th>
+                          <th scope="col">料金</th>
+                          <th scope="col">別名</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sub.map((t) => (
+                          <tr>
+                            <th scope="row" class="nowrap">
+                              <a href={`/tools/${t.id}/`}>{t.data.name}</a>
+                            </th>
+                            <td>{t.data.oneLiner}</td>
+                            <td class="nowrap">{LABELS.learningCost[t.data.learningCost]}</td>
+                            <td class="nowrap">{LABELS.costModel[t.data.cost.model]}</td>
+                            <td class="muted">{t.data.aliases.join('、')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              );
+            })}
             <p class="muted" style="font-size: var(--fs-s)">
               <a href={`/categories/${c.id}/`}>{c.data.name} の解説と比較表へ</a>
             </p>
@@ -67,3 +78,21 @@ const { tools, categories } = await getAll();
     }
   </div>
 </Base>
+
+<style>
+  .layer-group + .layer-group {
+    margin-block-start: 1rem;
+  }
+  .layer-group__h {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
+    margin-block-end: 0.4rem;
+    font-size: var(--fs-m);
+  }
+  .layer-group__h small {
+    font-weight: 400;
+    flex-basis: 100%;
+  }
+</style>

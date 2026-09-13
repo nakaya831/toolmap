@@ -50,6 +50,26 @@ export const LABELS = {
   },
 } as const;
 
+/** 種別の説明（初学者向け）。比較表を種別で分けるときの見出しの下に出す */
+export const LAYER_DESCRIPTIONS = {
+  language: '言語そのもの。標準のツールチェーンを含む',
+  runtime: '言語を動かす処理系。言語とは別に選ぶ',
+  framework: '自分で書くコードの土台になるライブラリ。動かす場所は自分で用意する',
+  'managed-service': '事業者が運用していて、借りて使うサービス。運用を任せられる代わりに、プランの上限が乗る',
+  tool: '自分の環境にインストールして使うソフトウェア。無料のものが多いが、運用は自分で持つ',
+  protocol: '仕様・規格そのもの。実装は別にあり、用語を知るために載せている',
+} as const;
+
+/** 種別で分けるときの並び。自分で動かすものから、借りるものへ */
+export const LAYER_ORDER = [
+  'language',
+  'runtime',
+  'framework',
+  'tool',
+  'managed-service',
+  'protocol',
+] as const;
+
 /** 比較表の行順（6.3）。maturity → learningCost */
 export const MATURITY_ORDER = ['stable', 'growing', 'legacy', 'deprecated'] as const;
 export const LEARNING_COST_ORDER = ['low', 'medium', 'high'] as const;

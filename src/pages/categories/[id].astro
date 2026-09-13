@@ -3,7 +3,11 @@ import { render } from 'astro:content';
 import Base from '@/layouts/Base.astro';
 import ComparisonTable from '@/components/ComparisonTable.astro';
 import CategoryBadge from '@/components/CategoryBadge.astro';
-import { byId, connectedFrom, getAll, toolsInCategory, type Category } from '@/lib/content';
+import { LABELS, LAYER_ORDER } from '@/config';
+import { byId, connectedFrom, getAll, toolsInCategory, type Category, type Tool } from '@/lib/content';
+
+const sortByLayer = (ts: Tool[]) =>
+  [...ts].sort((a, b) => LAYER_ORDER.indexOf(a.data.layer) - LAYER_ORDER.indexOf(b.data.layer));
 
 export async function getStaticPaths() {
   const { categories } = await getAll();
@@ -117,11 +121,11 @@ const caps = [...capCount.entries()]
     <section class="section" aria-labelledby="cmp-h">
       <h2 id="cmp-h">この分野のツール（{list.length}件）</h2>
       <p class="muted" style="font-size: var(--fs-s)">
-        同じ列で比較できる。「主要制約」は各ツールで最も先に当たる限界。
+        種別（自分で書く土台か、借りて使うサービスか）で分けている。「主要制約」は各ツールで最も先に当たる限界。
       </p>
       {
         list.length > 0 ? (
-          <ComparisonTable tools={list} caption={`${category.data.name} の比較`} />
+          <ComparisonTable tools={list} caption={`${category.data.name} の比較`} groupByLayer />
         ) : (
           <p class="muted">この分野にはまだツールが掲載されていません。</p>
         )
@@ -137,15 +141,17 @@ const caps = [...capCount.entries()]
               <thead>
                 <tr>
                   <th scope="col">ツール</th>
+                  <th scope="col">種別</th>
                   <th scope="col">どういう時に選ぶか／避けるか</th>
                 </tr>
               </thead>
               <tbody>
-                {list.map((t) => (
+                {sortByLayer(list).map((t) => (
                   <tr>
                     <th scope="row" class="nowrap">
                       <a href={`/tools/${t.id}/`}>{t.data.name}</a>
                     </th>
+                    <td class="nowrap">{LABELS.layer[t.data.layer]}</td>
                     <td>{t.data.verdict}</td>
                   </tr>
                 ))}

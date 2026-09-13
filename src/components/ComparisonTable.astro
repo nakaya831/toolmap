@@ -1,5 +1,5 @@
 ---
-import { LABELS } from '@/config';
+import { LABELS, LAYER_DESCRIPTIONS, LAYER_ORDER } from '@/config';
 import type { Category, Tool } from '@/lib/content';
 import CategoryBadge from './CategoryBadge.astro';
 import FreshnessBadge from './FreshnessBadge.astro';
@@ -8,56 +8,98 @@ interface Props {
   tools: Tool[];
   categories?: Map<string, Category>;
   caption?: string;
+  /** 種別（layer）を大項目にして表を分ける */
+  groupByLayer?: boolean;
 }
-const { tools, categories, caption } = Astro.props;
+const { tools, categories, caption, groupByLayer = false } = Astro.props;
+
+const groups = groupByLayer
+  ? LAYER_ORDER.map((layer) => ({ layer, tools: tools.filter((t) => t.data.layer === layer) })).filter(
+      (g) => g.tools.length > 0,
+    )
+  : [{ layer: null as null | (typeof LAYER_ORDER)[number], tools }];
 ---
 
-<div class="table-wrap">
-  <table class="table compare">
-    {caption && <caption class="vh">{caption}</caption>}
-    <thead>
-      <tr>
-        <th scope="col">ツール</th>
-        {categories && <th scope="col">分類</th>}
-        <th scope="col">種別</th>
-        <th scope="col">学習</th>
-        <th scope="col">料金</th>
-        <th scope="col">成熟</th>
-        <th scope="col">主要制約</th>
-        <th scope="col">検証</th>
-      </tr>
-    </thead>
-    <tbody>
-      {
-        tools.map((t) => {
-          const c = t.data.constraints[0];
-          const cat = categories?.get(t.data.category.id);
-          return (
+{
+  groups.map((g) => (
+    <section class="cmp-group">
+      {g.layer && (
+        <h3 class="cmp-group__h">
+          {LABELS.layer[g.layer]}
+          <span class="muted">（{g.tools.length}件）</span>
+          <small class="muted">{LAYER_DESCRIPTIONS[g.layer]}</small>
+        </h3>
+      )}
+      <div class="table-wrap">
+        <table class="table compare">
+          {caption && (
+            <caption class="vh">
+              {caption}
+              {g.layer && `：${LABELS.layer[g.layer]}`}
+            </caption>
+          )}
+          <thead>
             <tr>
-              <th scope="row">
-                <a href={`/tools/${t.id}/`}>{t.data.name}</a>
-                <div class="muted" style="font-weight:400">
-                  {t.data.oneLiner}
-                </div>
-              </th>
-              {categories && (
-                <td class="nowrap">{cat && <CategoryBadge id={cat.id} name={cat.data.name} />}</td>
-              )}
-              <td class="nowrap">{LABELS.layer[t.data.layer]}</td>
-              <td class="nowrap">{LABELS.learningCost[t.data.learningCost]}</td>
-              <td class="nowrap">{LABELS.costModel[t.data.cost.model]}</td>
-              <td class="nowrap">{LABELS.maturity[t.data.maturity]}</td>
-              <td>
-                <span class="muted">{c.label}：</span>
-                <span class="value">{c.value}</span>
-              </td>
-              <td>
-                <FreshnessBadge date={c.verifiedAt} />
-              </td>
+              <th scope="col">ツール</th>
+              {categories && <th scope="col">分類</th>}
+              {!g.layer && <th scope="col">種別</th>}
+              <th scope="col">学習</th>
+              <th scope="col">料金</th>
+              <th scope="col">成熟</th>
+              <th scope="col">主要制約</th>
+              <th scope="col">検証</th>
             </tr>
-          );
-        })
-      }
-    </tbody>
-  </table>
-</div>
+          </thead>
+          <tbody>
+            {g.tools.map((t) => {
+              const c = t.data.constraints[0];
+              const cat = categories?.get(t.data.category.id);
+              return (
+                <tr>
+                  <th scope="row">
+                    <a href={`/tools/${t.id}/`}>{t.data.name}</a>
+                    <div class="muted" style="font-weight:400">
+                      {t.data.oneLiner}
+                    </div>
+                  </th>
+                  {categories && (
+                    <td class="nowrap">{cat && <CategoryBadge id={cat.id} name={cat.data.name} />}</td>
+                  )}
+                  {!g.layer && <td class="nowrap">{LABELS.layer[t.data.layer]}</td>}
+                  <td class="nowrap">{LABELS.learningCost[t.data.learningCost]}</td>
+                  <td class="nowrap">{LABELS.costModel[t.data.cost.model]}</td>
+                  <td class="nowrap">{LABELS.maturity[t.data.maturity]}</td>
+                  <td>
+                    <span class="muted">{c.label}：</span>
+                    <span class="value">{c.value}</span>
+                  </td>
+                  <td>
+                    <FreshnessBadge date={c.verifiedAt} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  ))
+}
+
+<style>
+  .cmp-group + .cmp-group {
+    margin-block-start: 1.5rem;
+  }
+  .cmp-group__h {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
+    margin-block-end: 0.5rem;
+    font-size: var(--fs-m);
+  }
+  .cmp-group__h small {
+    font-weight: 400;
+    flex-basis: 100%;
+  }
+</style>
