@@ -1,0 +1,112 @@
+---
+/** 種別（layer）同士の関係を描く図。名前とリンクはデータから、配置は固定 */
+import type { Layer } from '@/lib/content';
+
+interface Props {
+  layers: Layer[];
+}
+const { layers } = Astro.props;
+const name = (id: string) => layers.find((l) => l.id === id)?.data.name ?? id;
+const plain = (id: string) => layers.find((l) => l.id === id)?.data.plain ?? '';
+
+const B = {
+  language: { x: 30, y: 40, w: 200, h: 64 },
+  runtime: { x: 290, y: 40, w: 200, h: 64 },
+  framework: { x: 550, y: 40, w: 200, h: 64 },
+  tool: { x: 420, y: 170, w: 200, h: 64 },
+  'managed-service': { x: 660, y: 170, w: 210, h: 64 },
+  protocol: { x: 420, y: 290, w: 450, h: 50 },
+} as const;
+type Id = keyof typeof B;
+const ids = Object.keys(B) as Id[];
+---
+
+<figure class="layermap" data-pagefind-ignore>
+  <svg viewBox="0 0 900 360" role="img" aria-labelledby="layermap-title" xmlns="http://www.w3.org/2000/svg">
+    <title id="layermap-title">6つの種別と、その関係</title>
+    <defs>
+      <marker id="larr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="var(--ink)"></path>
+      </marker>
+    </defs>
+
+    {/* 言語 → 実行環境 → フレームワーク */}
+    <line x1={B.language.x + B.language.w + 3} y1="72" x2={B.runtime.x - 3} y2="72" stroke="var(--ink)" stroke-width="1.5" marker-end="url(#larr)"></line>
+    <text x={(B.language.x + B.language.w + B.runtime.x) / 2} y="64" text-anchor="middle" class="t-small">動かす</text>
+    <line x1={B.runtime.x + B.runtime.w + 3} y1="72" x2={B.framework.x - 3} y2="72" stroke="var(--ink)" stroke-width="1.5" marker-end="url(#larr)"></line>
+    <text x={(B.runtime.x + B.runtime.w + B.framework.x) / 2} y="64" text-anchor="middle" class="t-small">その上に載る</text>
+
+    {/* フレームワーク → ツール / マネージド（動かす場所） */}
+    <path d={`M ${B.framework.x + 100} ${B.framework.y + B.framework.h + 2} L ${B.framework.x + 100} 140 L ${B.tool.x + 100} 140 L ${B.tool.x + 100} ${B.tool.y - 3}`} fill="none" stroke="var(--ink)" stroke-width="1.5" marker-end="url(#larr)"></path>
+    <path d={`M ${B.framework.x + 100} 140 L ${B['managed-service'].x + 105} 140 L ${B['managed-service'].x + 105} ${B['managed-service'].y - 3}`} fill="none" stroke="var(--ink)" stroke-width="1.5" marker-end="url(#larr)"></path>
+    <text x={B.framework.x + 108} y="130" class="t-small">書いたものを、どこで動かすか</text>
+    <text x={B.tool.x} y={B.tool.y - 10} class="t-cap">自分で動かす</text>
+    <text x={B['managed-service'].x} y={B['managed-service'].y - 10} class="t-cap">借りる</text>
+
+    {/* ツール ⇄ マネージド（同じ役割の対） */}
+    <line x1={B.tool.x + B.tool.w + 3} y1="202" x2={B['managed-service'].x - 3} y2="202" stroke="var(--ink)" stroke-width="1.5" marker-start="url(#larr)" marker-end="url(#larr)"></line>
+    <text x={(B.tool.x + B.tool.w + B['managed-service'].x) / 2} y="194" text-anchor="middle" class="t-small">同じ役割の対</text>
+
+    {/* プロトコル：従う約束事 */}
+    <line x1="645" y1={B.protocol.y - 3} x2="645" y2={B.tool.y + B.tool.h + 3} stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#larr)"></line>
+    <text x="655" y={B.protocol.y - 14} class="t-small">つながるときに従う約束事</text>
+
+    {/* 左下の説明 */}
+    <text x="30" y="190" class="t-cap">読み方</text>
+    <text x="30" y="212" class="t-small">左から右へ：書く言葉 → 動かすもの → 作り方の土台。</text>
+    <text x="30" y="230" class="t-small">作ったものは「自分で動かす」か「借りる」かに分かれ、</text>
+    <text x="30" y="248" class="t-small">同じ役割で両方がある（例：PostgreSQL と Supabase）。</text>
+    <text x="30" y="266" class="t-small">プロトコルは実装ではなく、つながるための決まり。</text>
+
+    {
+      ids.map((id) => {
+        const b = B[id];
+        return (
+          <a href={`/layers/${id}/`} class="box">
+            <rect x={b.x} y={b.y} width={b.w} height={b.h} fill="var(--paper-2)" stroke="var(--ink)" stroke-width="1.5" />
+            <text x={b.x + 14} y={b.y + 26} class="t-name">
+              {name(id)}
+            </text>
+            <text x={b.x + 14} y={b.y + (b.h > 55 ? 46 : 40)} class="t-small">
+              {plain(id).length > 26 ? plain(id).slice(0, 25) + '…' : plain(id)}
+            </text>
+          </a>
+        );
+      })
+    }
+  </svg>
+</figure>
+
+<style>
+  .layermap {
+    margin: 0;
+  }
+  .layermap svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-width: 900px;
+    font-family: var(--font-sans);
+  }
+  .layermap .t-name {
+    font-size: 15px;
+    font-weight: 700;
+    fill: var(--ink);
+  }
+  .layermap .t-small {
+    font-size: 11.5px;
+    fill: var(--ink-2);
+  }
+  .layermap .t-cap {
+    font-size: 12px;
+    font-weight: 700;
+    fill: var(--ink);
+  }
+  .layermap a.box:hover rect,
+  .layermap a.box:focus-visible rect {
+    stroke-width: 3;
+  }
+  .layermap a.box {
+    outline: none;
+  }
+</style>

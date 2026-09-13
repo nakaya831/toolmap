@@ -15,15 +15,17 @@ const path = Astro.url.pathname;
 const canonical = new URL(path, Astro.site);
 const buildDate = new Date();
 
-const NAV = [
-  { href: '/map/', label: '全体像' },
-  { href: '/categories/', label: '分野から' },
-  { href: '/tools/', label: 'ツール一覧' },
-  { href: '/capabilities/', label: '目的から' },
-  { href: '/search/', label: '検索' },
-  { href: '/about/', label: 'このサイト' },
+const PRIMARY = [
+  { href: '/categories/', label: '① 分野から学ぶ', match: ['/categories/', '/map/'] },
+  { href: '/layers/', label: '② 種別から学ぶ', match: ['/layers/'] },
 ];
-const isCurrent = (href: string) => path === href || (href !== '/' && path.startsWith(href));
+const SECONDARY = [
+  { href: '/tools/', label: 'ツール一覧', match: ['/tools/'] },
+  { href: '/capabilities/', label: '目的から', match: ['/capabilities/'] },
+  { href: '/search/', label: '検索', match: ['/search/'] },
+  { href: '/about/', label: 'このサイト', match: ['/about/'] },
+];
+const isCurrent = (m: string[]) => m.some((href) => path === href || path.startsWith(href));
 ---
 
 <!doctype html>
@@ -52,8 +54,16 @@ const isCurrent = (href: string) => path === href || (href !== '/' && path.start
         <a class="brand" href="/">{SITE_NAME}<small>{SITE_TAGLINE}</small></a>
         <nav class="nav" aria-label="サイト内">
           {
-            NAV.map((n) => (
-              <a href={n.href} aria-current={isCurrent(n.href) ? 'page' : undefined}>
+            PRIMARY.map((n) => (
+              <a class="nav__primary" href={n.href} aria-current={isCurrent(n.match) ? 'page' : undefined}>
+                {n.label}
+              </a>
+            ))
+          }
+          <span class="nav__sep" aria-hidden="true"></span>
+          {
+            SECONDARY.map((n) => (
+              <a href={n.href} aria-current={isCurrent(n.match) ? 'page' : undefined}>
                 {n.label}
               </a>
             ))

@@ -1,20 +1,23 @@
 ---
 import Base from '@/layouts/Base.astro';
 import CategoryBadge from '@/components/CategoryBadge.astro';
+import StackMap from '@/components/StackMap.astro';
 import { byId, getAll, toolsInCategory } from '@/lib/content';
 
 const { tools, categories } = await getAll();
 const toolsById = byId(tools);
 ---
 
-<Base title="分野から探す" description="12の分野。それぞれ何をする分野で、最初に何を触ればよいか。">
-  <div class="stack">
+<Base title="分野から学ぶ" description="ソフトウェアを構成する12の分野。それぞれ何をする分野で、どうつながり、最初に何を触ればよいか。">
+  <div class="stack" style="--flow: 1.5rem">
     <header class="stack" style="--flow: 0.5rem">
-      <h1>分野から探す</h1>
+      <h1>分野から学ぶ：部品の「役割」で分ける</h1>
       <p class="lede prose">
-        ソフトウェアを構成する12の分野。上から順に学ぶことを想定した並び。分野同士のつながりは<a href="/map/">全体像</a>にある。
+        ソフトウェアを構成する12の分野。「何のための部品か」で分けている。上から順に学ぶことを想定した並びで、分野同士のつながりは<a href="/map/">全体像</a>に図と文章で解説している。
       </p>
     </header>
+    <StackMap categories={categories} compact />
+    <p class="muted" style="font-size: var(--fs-s)"><a href="/map/">図の読み方・学ぶ順番・つながりの一覧へ</a></p>
     <div class="table-wrap">
       <table class="table">
         <thead>

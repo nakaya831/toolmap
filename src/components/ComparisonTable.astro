@@ -25,7 +25,7 @@ const groups = groupByLayer
     <section class="cmp-group">
       {g.layer && (
         <h3 class="cmp-group__h">
-          {LABELS.layer[g.layer]}
+          <a href={`/layers/${g.layer}/`}>{LABELS.layer[g.layer]}</a>
           <span class="muted">（{g.tools.length}件）</span>
           <small class="muted">{LAYER_DESCRIPTIONS[g.layer]}</small>
         </h3>

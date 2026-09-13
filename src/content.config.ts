@@ -62,6 +62,25 @@ const categories = defineCollection({
   }),
 });
 
+const layers = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/data/layers' }),
+  schema: z.object({
+    name: z.string(),
+    order: z.number(),
+    plain: z.string(), // 一言。専門用語なしで
+    role: z.string(), // 種別の役割
+    relations: z
+      .array(
+        z.object({
+          to: reference('layers'),
+          how: z.string(), // 他の種別との関係
+        }),
+      )
+      .min(1),
+    chooseWhen: z.string(), // いつこの種別を選ぶか
+  }),
+});
+
 const capabilities = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/data/capabilities' }),
   schema: z.object({
@@ -113,4 +132,4 @@ const tools = defineCollection({
   }),
 });
 
-export const collections = { categories, capabilities, tools };
+export const collections = { categories, layers, capabilities, tools };

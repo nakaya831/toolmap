@@ -4,6 +4,7 @@ import { GROUP_ORDER, LEARNING_COST_ORDER, MATURITY_ORDER } from '@/config';
 export type Tool = CollectionEntry<'tools'>;
 export type Capability = CollectionEntry<'capabilities'>;
 export type Category = CollectionEntry<'categories'>;
+export type Layer = CollectionEntry<'layers'>;
 
 /** 比較表の行順（SPEC 6.3）：maturity → learningCost → name */
 export function sortTools(tools: Tool[]): Tool[] {
@@ -42,16 +43,30 @@ export function sortCapabilities(caps: Capability[]): Capability[] {
 }
 
 export async function getAll() {
-  const [tools, capabilities, categories] = await Promise.all([
+  const [tools, capabilities, categories, layers] = await Promise.all([
     getCollection('tools'),
     getCollection('capabilities'),
     getCollection('categories'),
+    getCollection('layers'),
   ]);
   return {
     tools: sortTools(tools),
     capabilities: sortCapabilities(capabilities),
     categories: sortCategories(categories),
+    layers: [...layers].sort((a, b) => a.data.order - b.data.order),
   };
+}
+
+export function toolsInLayer(tools: Tool[], layerId: string): Tool[] {
+  return sortTools(tools.filter((t) => t.data.layer === layerId));
+}
+
+/** ある種別を relations で指している種別（逆参照） */
+export function relatedFrom(layers: Layer[], layerId: string) {
+  return [...layers]
+    .sort((a, b) => a.data.order - b.data.order)
+    .filter((l) => l.id !== layerId && l.data.relations.some((x) => x.to.id === layerId))
+    .map((l) => ({ layer: l, how: l.data.relations.find((x) => x.to.id === layerId)!.how }));
 }
 
 export function toolsInCategory(tools: Tool[], categoryId: string): Tool[] {

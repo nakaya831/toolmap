@@ -1,0 +1,184 @@
+---
+import { render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import CategoryBadge from '@/components/CategoryBadge.astro';
+import FreshnessBadge from '@/components/FreshnessBadge.astro';
+import { LABELS } from '@/config';
+import { byId, getAll, relatedFrom, toolsInLayer, type Layer } from '@/lib/content';
+
+export async function getStaticPaths() {
+  const { layers } = await getAll();
+  return layers.map((l) => ({ params: { id: l.id }, props: { layer: l } }));
+}
+interface Props {
+  layer: Layer;
+}
+const { layer } = Astro.props;
+const { tools, categories, layers } = await getAll();
+const list = toolsInLayer(tools, layer.id);
+const layersById = byId(layers);
+const incoming = relatedFrom(layers, layer.id);
+const { Content } = await render(layer);
+const hasBody = layer.body && layer.body.trim().length > 0;
+const prev = layers.find((l) => l.data.order === layer.data.order - 1);
+const next = layers.find((l) => l.data.order === layer.data.order + 1);
+
+// 分野ごとにまとめる（分野の学習順）
+const byCategory = categories
+  .map((c) => ({ category: c, tools: list.filter((t) => t.data.category.id === c.id) }))
+  .filter((g) => g.tools.length > 0);
+---
+
+<Base title={`${layer.data.name}（種別）`} description={layer.data.plain}>
+  <article class="stack" style="--flow: 1.5rem">
+    <header class="stack" style="--flow: 0.5rem">
+      <div class="meta">
+        <span>種別 {String(layer.data.order).padStart(2, '0')}</span>
+        <a href="/layers/">種別の一覧に戻る</a>
+      </div>
+      <h1>{layer.data.name}</h1>
+      <p class="lede" style="font-size: var(--fs-l)">{layer.data.plain}</p>
+      <p class="prose">{layer.data.role}。</p>
+    </header>
+
+    <section class="section mt-0 choose" aria-labelledby="choose-h">
+      <h2 id="choose-h">いつこの種別を選ぶか</h2>
+      <p class="prose">{layer.data.chooseWhen}</p>
+    </section>
+
+    <section class="section" aria-labelledby="rel-h">
+      <h2 id="rel-h">他の種別との関係</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">種別</th>
+              <th scope="col">どういう関係か</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              layer.data.relations.map((r) => (
+                <tr>
+                  <th scope="row" class="nowrap">
+                    <a href={`/layers/${r.to.id}/`}>{layersById.get(r.to.id)?.data.name ?? r.to.id}</a>
+                  </th>
+                  <td>{r.how}</td>
+                </tr>
+              ))
+            }
+            {
+              incoming.map(({ layer: from, how }) => (
+                <tr>
+                  <th scope="row" class="nowrap">
+                    <a href={`/layers/${from.id}/`}>{from.data.name}</a>
+                    <span class="muted">（から見ると）</span>
+                  </th>
+                  <td>{how}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {
+      hasBody && (
+        <section class="section prose" aria-labelledby="body-h">
+          <h2 id="body-h">この種別を理解する</h2>
+          <div class="stack" style="--flow: 0.75rem">
+            <Content />
+          </div>
+        </section>
+      )
+    }
+
+    <section class="section" aria-labelledby="tools-h">
+      <h2 id="tools-h">この種別のツール（{list.length}件）</h2>
+      <p class="muted" style="font-size: var(--fs-s)">分野ごとに並べている。「主要制約」は各ツールで最も先に当たる限界。</p>
+      {list.length === 0 && <p class="muted">この種別にはまだツールが掲載されていません。</p>}
+      {
+        byCategory.map(({ category, tools: ts }) => (
+          <section class="layer-cat">
+            <h3 class="layer-cat__h">
+              <CategoryBadge id={category.id} name={category.data.name} bar />
+              <span class="muted">{category.data.plain}</span>
+            </h3>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">ツール</th>
+                    <th scope="col">学習</th>
+                    <th scope="col">料金</th>
+                    <th scope="col">成熟</th>
+                    <th scope="col">主要制約</th>
+                    <th scope="col">検証</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ts.map((t) => {
+                    const c = t.data.constraints[0];
+                    return (
+                      <tr>
+                        <th scope="row">
+                          <a href={`/tools/${t.id}/`}>{t.data.name}</a>
+                          <div class="muted" style="font-weight:400">
+                            {t.data.oneLiner}
+                          </div>
+                        </th>
+                        <td class="nowrap">{LABELS.learningCost[t.data.learningCost]}</td>
+                        <td class="nowrap">{LABELS.costModel[t.data.cost.model]}</td>
+                        <td class="nowrap">{LABELS.maturity[t.data.maturity]}</td>
+                        <td>
+                          <span class="muted">{c.label}：</span>
+                          <span class="value mono">{c.value}</span>
+                        </td>
+                        <td>
+                          <FreshnessBadge date={c.verifiedAt} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ))
+      }
+    </section>
+
+    <footer class="section meta">
+      {prev && <a href={`/layers/${prev.id}/`}>前：{prev.data.name}</a>}
+      {next && <a href={`/layers/${next.id}/`}>次：{next.data.name}</a>}
+      <a href="/layers/">種別の一覧</a>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .choose {
+    border-left: 4px solid var(--ink);
+    padding-inline-start: 1rem;
+  }
+  .choose h2 {
+    border: 0;
+    margin: 0 0 0.25rem;
+    padding: 0;
+  }
+  .layer-cat + .layer-cat {
+    margin-block-start: 1.25rem;
+  }
+  .layer-cat__h {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    margin-block-end: 0.4rem;
+  }
+  .layer-cat__h .muted {
+    font-weight: 400;
+    font-size: var(--fs-s);
+  }
+</style>

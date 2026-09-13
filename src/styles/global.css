@@ -243,6 +243,15 @@
   .nav a[aria-current='page'] {
     border-bottom-color: var(--ink);
   }
+  .nav__primary {
+    font-weight: 700;
+  }
+  .nav__sep {
+    inline-size: 1px;
+    align-self: stretch;
+    background: var(--rule);
+    margin-inline: 0.25rem;
+  }
   main {
     flex: 1;
     width: 100%;

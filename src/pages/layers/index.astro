@@ -1,0 +1,100 @@
+---
+import Base from '@/layouts/Base.astro';
+import LayerMap from '@/components/LayerMap.astro';
+import { byId, getAll, toolsInLayer } from '@/lib/content';
+
+const { tools, layers } = await getAll();
+const layersById = byId(layers);
+---
+
+<Base title="種別から学ぶ" description="言語・実行環境・フレームワーク・ツール・マネージドサービス・プロトコル。道具の「性質」で分けた6つの種別と、その関係。">
+  <article class="stack" style="--flow: 2rem">
+    <header class="stack" style="--flow: 0.5rem">
+      <h1>種別から学ぶ：道具の「性質」で分ける</h1>
+      <p class="lede prose">
+        「分野」が<em>何のための部品か</em>で分けるのに対し、「種別」は<em>どういう性質の道具か</em>で分ける。自分で書く土台なのか、インストールして動かすものなのか、借りて使うサービスなのか。この区別が分かると、同じ分野の中で何を比べているのかが見える。
+      </p>
+    </header>
+
+    <LayerMap layers={layers} />
+
+    <section class="section" aria-labelledby="list-h">
+      <h2 id="list-h">6つの種別</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">順</th>
+              <th scope="col">種別</th>
+              <th scope="col">一言で言うと</th>
+              <th scope="col">役割</th>
+              <th scope="col">掲載</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              layers.map((l) => {
+                const ts = toolsInLayer(tools, l.id);
+                return (
+                  <tr>
+                    <td class="mono nowrap">{String(l.data.order).padStart(2, '0')}</td>
+                    <th scope="row" class="nowrap">
+                      <a href={`/layers/${l.id}/`}>{l.data.name}</a>
+                    </th>
+                    <td>{l.data.plain}</td>
+                    <td>{l.data.role}</td>
+                    <td class="nowrap">{ts.length}件</td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="rel-h">
+      <h2 id="rel-h">種別同士の関係</h2>
+      <p class="muted prose">図の矢印を文章にしたもの。「A → B」は A から見た B との関係。</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">種別</th>
+              <th scope="col">関係する種別</th>
+              <th scope="col">どういう関係か</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              layers.flatMap((l) =>
+                l.data.relations.map((r, i) => (
+                  <tr>
+                    <th scope="row" class="nowrap">{i === 0 ? <a href={`/layers/${l.id}/`}>{l.data.name}</a> : ''}</th>
+                    <td class="nowrap">
+                      <a href={`/layers/${r.to.id}/`}>{layersById.get(r.to.id)?.data.name ?? r.to.id}</a>
+                    </td>
+                    <td>{r.how}</td>
+                  </tr>
+                )),
+              )
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section prose stack" style="--flow: 0.75rem" aria-labelledby="why-h">
+      <h2 id="why-h">なぜ種別で分けるのか</h2>
+      <p>
+        同じ「サーバー・API」の分野に、FastAPI（フレームワーク）と Supabase（マネージドサービス）が並んでいる。この2つは競合ではなく、「自分で書くか、借りるか」という選択の両側にある。種別を知らずに比較表を読むと、この違いが見えない。
+      </p>
+      <p>
+        種別は、制約の現れ方も決める。フレームワークやツールの制約は「仕組み上の性質」として現れ、マネージドサービスの制約は「何件まで」「何回まで」という数字と料金で現れる。プロトコルの制約は「仕様がそう決めている」形で現れる。
+      </p>
+      <p>
+        学ぶ順番の目安：まず<a href="/layers/language/">言語</a>と<a href="/layers/framework/">フレームワーク</a>で「書く」を覚え、<a href="/layers/tool/">ツール</a>で「動かす」を覚え、公開するときに<a href="/layers/managed-service/">マネージドサービス</a>を借りる。<a href="/layers/runtime/">実行環境</a>と<a href="/layers/protocol/">プロトコル</a>は、必要になったときに読めばよい。
+      </p>
+    </section>
+  </article>
+</Base>

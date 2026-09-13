@@ -36,6 +36,14 @@ const schemas = {
     startWith: z.string(),
     startWhy: z.string().min(1),
   }),
+  layers: z.object({
+    name: z.string(),
+    order: z.number(),
+    plain: z.string().min(1),
+    role: z.string().min(1),
+    relations: z.array(z.object({ to: z.string(), how: z.string().min(1) })).min(1),
+    chooseWhen: z.string().min(1),
+  }),
   capabilities: z.object({
     name: z.string(),
     group: z.enum(GROUPS),
@@ -69,10 +77,11 @@ const ids: Record<Collection, Set<string>> = {
   tools: new Set(readCollection('tools').map((e) => e.id)),
   capabilities: new Set(readCollection('capabilities').map((e) => e.id)),
   categories: new Set(readCollection('categories').map((e) => e.id)),
+  layers: new Set(readCollection('layers').map((e) => e.id)),
 };
 
 function collectionOf(file: string): Collection {
-  const m = file.replaceAll('\\', '/').match(/src\/data\/(tools|capabilities|categories)\//);
+  const m = file.replaceAll('\\', '/').match(/src\/data\/(tools|capabilities|categories|layers)\//);
   if (!m) throw new Error(`src/data 配下のファイルではない: ${file}`);
   return m[1] as Collection;
 }
@@ -107,6 +116,13 @@ function validate(e: Entry): string[] {
       }
     }
   }
+  if (e.collection === 'layers') {
+    if (!LAYERS.includes(e.id as any)) errors.push(`ID が layer の列挙値にない: ${e.id}`);
+    d.relations.forEach((c: any, i: number) => {
+      ref('layers', c.to, `relations[${i}].to`);
+      if (c.to === e.id) errors.push(`relations[${i}]: 自分自身を指している`);
+    });
+  }
   if (e.collection === 'categories') {
     ref('tools', d.startWith, 'startWith');
     d.connections.forEach((c: any, i: number) => {
@@ -126,7 +142,7 @@ const entries: Entry[] = args.length
         return { collection: collectionOf(f), id: f, file: f, data: {}, body: '', raw: '', parseError: String((e as Error).message) };
       }
     })
-  : (['categories', 'capabilities', 'tools'] as Collection[]).flatMap(readCollection);
+  : (['categories', 'layers', 'capabilities', 'tools'] as Collection[]).flatMap(readCollection);
 
 let failed = 0;
 const warnOnly = /値に数値が含まれない/;

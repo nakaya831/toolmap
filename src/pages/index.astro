@@ -1,11 +1,10 @@
 ---
 import Base from '@/layouts/Base.astro';
 import CategoryBadge from '@/components/CategoryBadge.astro';
-import StackMap from '@/components/StackMap.astro';
 import { LABELS, SITE_DESCRIPTION, SITE_NAME } from '@/config';
-import { byId, getAll, sortToolsForLearning, toolsInCategory } from '@/lib/content';
+import { byId, getAll, sortToolsForLearning, toolsInCategory, toolsInLayer } from '@/lib/content';
 
-const { tools, categories } = await getAll();
+const { tools, categories, layers } = await getAll();
 const toolsById = byId(tools);
 ---
 
@@ -14,59 +13,58 @@ const toolsById = byId(tools);
     <header class="stack" style="--flow: 0.75rem">
       <h1>ソフトウェアは、どんな部品でできているか</h1>
       <p class="lede prose">
-        プログラミングを学び始めると、「フロントエンド」「バックエンド」「データベース」「デプロイ」といった言葉が次々に出てくる。ここは、それらが<strong>それぞれ何をしていて、どうつながって一つのソフトウェアになるのか</strong>を、初学者向けに一枚の地図にしたサイトです。
+        プログラミングを学び始めると、「フロントエンド」「バックエンド」「データベース」「デプロイ」といった言葉が次々に出てくる。ここは、それらが<strong>それぞれ何をしていて、どうつながって一つのソフトウェアになるのか</strong>を、初学者向けに地図にしたサイトです。
       </p>
       <p class="prose">
-        地図の上に、各分野の代表的なツール {tools.length} 件を置いています。どのツールも「できること」だけでなく「できないこと」と「限界値」を、公式ドキュメントの出典つきで同じ形で載せています。使い方は載せません。使い方は公式ドキュメントが最も正確だからです。
+        地図には2つの軸があります。部品の<strong>役割</strong>で分けた「分野」と、道具の<strong>性質</strong>で分けた「種別」。その上に代表的なツール {tools.length} 件を置き、どのツールも「できること」だけでなく「できないこと」と「限界値」を、公式ドキュメントの出典つきで同じ形で載せています。使い方は載せません。
       </p>
     </header>
 
-    <section class="section mt-0" aria-labelledby="map-h">
-      <h2 id="map-h">全体像</h2>
-      <StackMap categories={categories} />
-      <p style="margin-block-start: 0.75rem">
-        <a href="/map/">図の読み方と、学ぶ順番の解説へ</a>
-      </p>
-    </section>
-
-    <section class="section" aria-labelledby="cat-h">
-      <h2 id="cat-h">12の分野</h2>
-      <p class="muted prose">上から順に学ぶことを想定した並び。各分野に「最初に触るなら」を1件ずつ挙げている。</p>
-      <ol class="catlist">
-        {
-          categories.map((c) => {
-            const start = toolsById.get(c.data.startWith.id);
-            return (
+    <div class="entrances">
+      <section class="entrance" aria-labelledby="e1">
+        <h2 id="e1"><a href="/categories/">① 分野から学ぶ</a></h2>
+        <p class="muted">部品の「役割」で分ける。画面、サーバー、データの保存……という12の分野が、どうつながって一つのソフトウェアになるか。</p>
+        <ol class="entrance__list">
+          {
+            categories.map((c) => (
               <li>
-                <div class="catlist__head">
-                  <CategoryBadge id={c.id} name={c.data.name} bar />
-                  <span class="muted">{c.data.plain}</span>
-                </div>
-                <div class="catlist__body">
-                  <span>{c.data.role}。</span>
-                  {start && (
-                    <span>
-                      最初に触るなら <a href={`/tools/${start.id}/`}>{start.data.name}</a>。
-                    </span>
-                  )}
-                </div>
+                <CategoryBadge id={c.id} name={c.data.name} />
+                <span class="muted"> {c.data.plain}</span>
               </li>
-            );
-          })
-        }
-      </ol>
-    </section>
+            ))
+          }
+        </ol>
+        <p><a href="/map/">全体像の図と、学ぶ順番へ</a></p>
+      </section>
+      <section class="entrance" aria-labelledby="e2">
+        <h2 id="e2"><a href="/layers/">② 種別から学ぶ</a></h2>
+        <p class="muted">道具の「性質」で分ける。自分で書く土台か、インストールして動かすものか、借りて使うサービスか。同じ分野の中で何を比べているのかが見える。</p>
+        <ol class="entrance__list">
+          {
+            layers.map((l) => (
+              <li>
+                <a href={`/layers/${l.id}/`}>{l.data.name}</a>
+                <span class="muted"> {l.data.plain}</span>
+                <span class="muted">（{toolsInLayer(tools, l.id).length}件）</span>
+              </li>
+            ))
+          }
+        </ol>
+        <p><a href="/layers/">種別同士の関係へ</a></p>
+      </section>
+    </div>
 
     <section class="section" aria-labelledby="all-h">
       <h2 id="all-h">ツール一覧（{tools.length}件）</h2>
       <p class="muted prose">
-        分野ごとに、学習コストの低い順。名前を知っている道具から入ってもよい。
+        分野ごとに、学習コストの低い順。各分野の「最初に触るなら」を太字にしている。
         <a href="/search/">検索</a>では略称（GAS、S3、PG）でも引ける。
       </p>
       <div class="cols" style="gap: 1.5rem 2rem">
         {
           categories.map((c) => {
             const list = sortToolsForLearning(toolsInCategory(tools, c.id));
+            const startId = c.data.startWith.id;
             return (
               <section aria-labelledby={`all-${c.id}`}>
                 <h3 id={`all-${c.id}`} style="border-bottom: 1px solid var(--rule); padding-block-end: 0.2rem">
@@ -74,10 +72,10 @@ const toolsById = byId(tools);
                 </h3>
                 <ul class="toollist">
                   {list.map((t) => (
-                    <li>
+                    <li class:list={{ start: t.id === startId }}>
                       <a href={`/tools/${t.id}/`}>{t.data.name}</a>
+                      <span class="tag" title="種別">{LABELS.layer[t.data.layer]}</span>
                       <span class="muted"> {t.data.oneLiner}</span>
-                      <span class="tag" title="学習コスト">{LABELS.learningCost[t.data.learningCost]}</span>
                     </li>
                   ))}
                 </ul>
@@ -86,50 +84,24 @@ const toolsById = byId(tools);
           })
         }
       </div>
+      <p style="margin-block-start: 1rem"><a href="/tools/">種別ごとに分けた全量の一覧へ</a></p>
     </section>
   </div>
 </Base>
 
 <style>
-  .catlist {
+  .entrance__list {
     list-style: none;
     padding: 0;
-    counter-reset: cat;
+    margin-block-start: 0.5rem;
+    font-size: var(--fs-s);
   }
-  .catlist li {
+  .entrance__list li {
+    padding-block: 0.2rem;
     max-width: none;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid var(--rule);
-    display: grid;
-    grid-template-columns: minmax(12rem, 18rem) 1fr;
-    gap: 0.25rem 1.5rem;
-    counter-increment: cat;
   }
-  .catlist li:first-child {
-    border-top: 2px solid var(--rule-strong);
-  }
-  .catlist__head {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-  }
-  .catlist__head::before {
-    content: counter(cat, decimal-leading-zero);
-    font-family: var(--font-mono);
-    font-size: var(--fs-s);
-    color: var(--ink-2);
-  }
-  .catlist__head .muted {
-    font-size: var(--fs-s);
-  }
-  .catlist__body {
-    font-size: var(--fs-s);
-    max-width: 44em;
-  }
-  @media (max-width: 40rem) {
-    .catlist li {
-      grid-template-columns: 1fr;
-    }
+  .entrance__list a {
+    font-weight: 700;
   }
   .toollist {
     list-style: none;
@@ -142,6 +114,9 @@ const toolsById = byId(tools);
     border-bottom: 1px solid var(--rule);
   }
   .toollist a {
+    font-weight: 400;
+  }
+  .toollist li.start a {
     font-weight: 700;
   }
   .toollist .tag {

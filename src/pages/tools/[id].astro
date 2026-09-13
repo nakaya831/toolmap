@@ -57,7 +57,7 @@ const host = (u: string) => {
     <header class="stack" style="--flow: 0.5rem">
       <div class="meta" data-pagefind-ignore>
         <CategoryBadge id={category.id} name={category.data.name} bar />
-        <span>{LABELS.layer[t.layer]}</span>
+        <a href={`/layers/${t.layer}/`}>種別：{LABELS.layer[t.layer]}</a>
         <span>成熟度 {LABELS.maturity[t.maturity]}</span>
         <span>学習コスト {LABELS.learningCost[t.learningCost]}</span>
       </div>

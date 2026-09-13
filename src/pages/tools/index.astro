@@ -36,7 +36,7 @@ const { tools, categories } = await getAll();
               return (
                 <section class="layer-group">
                   <h3 class="layer-group__h">
-                    {LABELS.layer[layer]}
+                    <a href={`/layers/${layer}/`}>{LABELS.layer[layer]}</a>
                     <span class="muted">（{sub.length}件）</span>
                     <small class="muted">{LAYER_DESCRIPTIONS[layer]}</small>
                   </h3>
