@@ -24,7 +24,7 @@ http://localhost:4321 を開く。トップ → 「課題から」→ 任意の�
 1. GitHub に公開リポジトリ `toolmap` を作る
 2. このフォルダで：
    ```bash
-   git remote add origin https://github.com/<user>/toolmap.git
+   git remote add origin https://github.com/nakaya831/toolmap.git
    git push -u origin main
    ```
 3. Cloudflare Pages で「Git に接続」→ リポジトリを選び、ビルドコマンド `npm run build`、出力ディレクトリ `dist`、Node バージョン 22 以上（環境変数 `NODE_VERSION=22`）
