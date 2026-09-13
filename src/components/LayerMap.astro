@@ -7,7 +7,15 @@ interface Props {
 }
 const { layers } = Astro.props;
 const name = (id: string) => layers.find((l) => l.id === id)?.data.name ?? id;
-const plain = (id: string) => layers.find((l) => l.id === id)?.data.plain ?? '';
+// 箱の中だけで使う短い説明（幅に収まる長さに固定）
+const KW: Record<string, string> = {
+  language: '書くための言葉',
+  runtime: '書いたものを動かすもの',
+  framework: '決まった作り方の土台',
+  tool: '入れて、自分で動かす',
+  'managed-service': '事業者から借りて使う',
+  protocol: 'つながるための約束事',
+};
 
 const B = {
   language: { x: 30, y: 40, w: 200, h: 64 },
@@ -68,7 +76,7 @@ const ids = Object.keys(B) as Id[];
               {name(id)}
             </text>
             <text x={b.x + 14} y={b.y + (b.h > 55 ? 46 : 40)} class="t-small">
-              {plain(id).length > 26 ? plain(id).slice(0, 25) + '…' : plain(id)}
+              {KW[id]}
             </text>
           </a>
         );
