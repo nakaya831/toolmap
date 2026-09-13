@@ -35,22 +35,24 @@
 | `verdict` | 「〜では第一候補。〜の場合は避け、〜へ」の形で 2〜3 文 |
 | 本文（frontmatter の後） | 任意。2 段落まで。背景と、最初に当たる制約の補足 |
 
-## 3. `alternatives` で参照できるツール ID（第1優先 42 件）
+## 3. `alternatives` で参照できるツール ID（52 件）
 
 ```
-python typescript go
-react nextjs astro
+python typescript go rust
+react nextjs astro sveltekit
 fastapi hono supabase firebase
-postgresql sqlite redis amazon-s3
+postgresql sqlite redis amazon-s3 mongodb meilisearch
 pandas duckdb bigquery
-aws-lambda cloudflare-workers vercel github-pages docker render
+aws-lambda cloudflare-workers vercel github-pages docker render fly-io
 google-apps-script n8n cron
-git github github-actions terraform
+git github github-actions terraform gitlab playwright
 sentry prometheus-grafana datadog
-auth0 clerk oauth2-oidc
+auth0 clerk oauth2-oidc cloudflare-waf
 claude-api openai-api ollama hugging-face
-zapier airtable
+zapier airtable make notion
 ```
+
+実在する ID は `src/data/tools/` で確認できる。
 
 これ以外の ID を参照するとビルドが落ちる。
 
