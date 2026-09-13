@@ -7,7 +7,7 @@ import { readCollection, rel } from './lib.ts';
 
 const TIMEOUT_MS = 15_000;
 const CONCURRENCY = 6;
-const UA = 'Mozilla/5.0 (compatible; toolmap-linkcheck/1.0; +https://toolmap.pages.dev/about/)';
+const UA = 'Mozilla/5.0 (compatible; toolmap-linkcheck/1.0; +https://toolmap-frx.pages.dev/about/)';
 
 interface Ref {
   url: string;

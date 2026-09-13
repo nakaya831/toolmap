@@ -30,7 +30,7 @@ http://localhost:4321 を開く。トップ → 「課題から」→ 任意の�
    - `CLOUDFLARE_API_TOKEN` … 1 のトークン
    - `CLOUDFLARE_ACCOUNT_ID` … 2 の ID
 4. GitHub の Actions タブ → **Deploy to Cloudflare Pages** → Run workflow。初回はプロジェクト `toolmap` を自動作成してからアップロードする。Summary にデプロイ URL が出る
-5. 公開 URL が `toolmap.pages.dev` 以外になった場合は `astro.config.mjs` の `SITE` と `public/robots.txt` を直す
+5. 公開 URL は https://toolmap-frx.pages.dev （`toolmap.pages.dev` は他者のプロジェクトが取得済み）。独自ドメインへ移す場合は `astro.config.mjs` の `SITE` と `public/robots.txt` を直す
 6. Actions タブで `Monthly freshness and link check` を手動実行し、Issue が立つことを確認する
 
 トークンは Claude に渡さず、GitHub のシークレット画面に直接貼る。以後は main への push ごとに自動でデプロイされる。

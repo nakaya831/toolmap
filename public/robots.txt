@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /pagefind/
 
-Sitemap: https://toolmap.pages.dev/sitemap-index.xml
+Sitemap: https://toolmap-frx.pages.dev/sitemap-index.xml
