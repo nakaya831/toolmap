@@ -38,4 +38,4 @@ scripts/              検証スクリプト（Node 22+ で直接実行）
 
 ## 公開
 
-Cloudflare Pages。ビルドコマンド `npm run build`、出力ディレクトリ `dist`。独自ドメインへ移す際は `astro.config.mjs` の `SITE`（または環境変数 `SITE_URL`）と `public/robots.txt` の Sitemap 行を変える。
+Cloudflare Pages。main への push で `.github/workflows/deploy.yml` がビルドし、プロジェクト `toolmap` へ直接アップロードする（シークレット `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が必要。手順は docs/HANDOFF.md の 3）。独自ドメインへ移す際は `astro.config.mjs` の `SITE`（または環境変数 `SITE_URL`）と `public/robots.txt` の Sitemap 行を変える。

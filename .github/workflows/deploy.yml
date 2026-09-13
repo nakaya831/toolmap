@@ -1,0 +1,71 @@
+name: Deploy to Cloudflare Pages
+
+# main への push でビルドし、Cloudflare Pages プロジェクト `toolmap` に直接アップロードする。
+# 必要なシークレット（リポジトリの Settings → Secrets and variables → Actions）:
+#   CLOUDFLARE_API_TOKEN   … 権限「Cloudflare Pages: Edit」のみのトークン
+#   CLOUDFLARE_ACCOUNT_ID  … ダッシュボードの Workers & Pages 画面右側に表示される Account ID
+# シークレットが未設定の間は、デプロイをスキップして成功終了する。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: false
+
+env:
+  PROJECT_NAME: toolmap
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+
+      - name: Check secrets
+        id: secrets
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$ACCOUNT" ]; then
+            echo "CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID が未設定のためデプロイをスキップします" >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Pages project (first time only)
+        if: steps.secrets.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create ${{ env.PROJECT_NAME }} --production-branch=main
+
+      - name: Deploy
+        if: steps.secrets.outputs.ready == 'true'
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ env.PROJECT_NAME }} --branch=main --commit-dirty=true
+
+      - name: Summary
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          echo "デプロイ完了: ${{ steps.deploy.outputs.deployment-url }}" >> "$GITHUB_STEP_SUMMARY"

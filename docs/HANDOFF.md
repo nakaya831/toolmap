@@ -19,17 +19,21 @@ http://localhost:4321 を開く。トップ → 「課題から」→ 任意の�
 4. **成熟度（maturity）の判断**：Supabase / Clerk / Ollama を `growing`、他を `stable` にした。これは執筆者の判断で出典はない。
 5. **OAuth 2.0 / OIDC のような「プロトコル」の扱い**：制約が数値を持たないため、仕様の条項番号を添える形にした。違和感があれば layer=protocol のエントリだけ書き方を変える。
 
-## 3. 公開までに発注者がやること（GitHub CLI が無いため未実施）
+## 3. 公開までに発注者がやること
 
-1. GitHub に公開リポジトリ `toolmap` を作る
-2. このフォルダで：
-   ```bash
-   git remote add origin https://github.com/nakaya831/toolmap.git
-   git push -u origin main
-   ```
-3. Cloudflare Pages で「Git に接続」→ リポジトリを選び、ビルドコマンド `npm run build`、出力ディレクトリ `dist`、Node バージョン 22 以上（環境変数 `NODE_VERSION=22`）
-4. 公開 URL が `toolmap.pages.dev` 以外になった場合は `astro.config.mjs` の `SITE` と `public/robots.txt` を直す
-5. GitHub の Actions タブで `Monthly freshness and link check` を手動実行（workflow_dispatch）し、Issue が立つことを確認する
+リポジトリ https://github.com/nakaya831/toolmap は作成・push 済み。CI も通っている。
+公開は GitHub Actions（`.github/workflows/deploy.yml`）から Cloudflare Pages へ直接アップロードする方式。ダッシュボードでの「Git に接続」は不要。
+
+1. Cloudflare ダッシュボード → 右上のプロフィール → **My Profile → API Tokens → Create Token**。テンプレートは使わず Custom token で、権限は **Account / Cloudflare Pages / Edit** の1つだけ。作成後に表示されるトークンを控える
+2. Cloudflare ダッシュボード → **Workers & Pages** の画面右側にある **Account ID** を控える
+3. GitHub の https://github.com/nakaya831/toolmap/settings/secrets/actions で **New repository secret** を2つ作る
+   - `CLOUDFLARE_API_TOKEN` … 1 のトークン
+   - `CLOUDFLARE_ACCOUNT_ID` … 2 の ID
+4. GitHub の Actions タブ → **Deploy to Cloudflare Pages** → Run workflow。初回はプロジェクト `toolmap` を自動作成してからアップロードする。Summary にデプロイ URL が出る
+5. 公開 URL が `toolmap.pages.dev` 以外になった場合は `astro.config.mjs` の `SITE` と `public/robots.txt` を直す
+6. Actions タブで `Monthly freshness and link check` を手動実行し、Issue が立つことを確認する
+
+トークンは Claude に渡さず、GitHub のシークレット画面に直接貼る。以後は main への push ごとに自動でデプロイされる。
 
 ## 4. 確認済みのこと
 
