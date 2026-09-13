@@ -6,14 +6,7 @@ import ConstraintTable from '@/components/ConstraintTable.astro';
 import FreshnessBadge from '@/components/FreshnessBadge.astro';
 import CategoryBadge from '@/components/CategoryBadge.astro';
 import { LABELS } from '@/config';
-import {
-  byId,
-  getAll,
-  referencedBy,
-  scenariosMentioning,
-  verifiedDates,
-  type Tool,
-} from '@/lib/content';
+import { byId, getAll, referencedBy, verifiedDates, type Tool } from '@/lib/content';
 import { formatDate, freshnessStatus, oldest } from '@/lib/freshness';
 
 export async function getStaticPaths() {
@@ -34,7 +27,7 @@ const capsById = byId(all.capabilities);
 const toolsById = byId(all.tools);
 const category = byId(all.categories).get(t.category.id)!;
 const alsoCited = referencedBy(all.tools, tool.id);
-const scenarios = scenariosMentioning(all.scenarios, tool.id);
+const isStart = category.data.startWith.id === tool.id;
 
 const oldestDate = oldest(verifiedDates(tool));
 const pageStale = oldestDate ? freshnessStatus(oldestDate) === 'stale' : false;
@@ -70,6 +63,11 @@ const host = (u: string) => {
       </div>
       <h1>{t.name}</h1>
       <p class="lede" style="font-size: var(--fs-l)" data-pagefind-weight="8">{t.oneLiner}</p>
+      <p class="muted" style="font-size: var(--fs-s)" data-pagefind-ignore>
+        分野「<a href={`/categories/${category.id}/`}>{category.data.name}</a>」：{category.data.plain}。
+        {isStart && 'この分野で最初に触るツールとして挙げている。'}
+        分野の役割とつながりは<a href={`/categories/${category.id}/`}>分野の解説</a>へ。
+      </p>
       {
         t.aliases.length > 0 && (
           <p class="muted" style="font-size: var(--fs-s)">
@@ -191,30 +189,11 @@ const host = (u: string) => {
       )
     }
 
-    {
-      scenarios.length > 0 && (
-        <section class="section" aria-labelledby="sc-h" data-pagefind-ignore>
-          <h2 id="sc-h">このツールが候補に挙がる課題</h2>
-          <ul>
-            {scenarios.map((s) => {
-              const c = s.data.candidates.find((c) => c.tool.id === tool.id)!;
-              return (
-                <li>
-                  <a href={`/scenarios/${s.id}/`}>{s.data.title}</a>
-                  <span class="muted">（{LABELS.fit[c.fit]}）</span>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )
-    }
-
     <footer class="section meta" data-pagefind-ignore>
       <a href={t.officialUrl} rel="noopener external">公式サイト</a>
       <a href={t.docsUrl} rel="noopener external">公式ドキュメント</a>
       <span>最終更新 {formatDate(t.updatedAt)}</span>
-      <a href={`/categories/${category.id}/`}>同じ分類のツールと比較する</a>
+      <a href={`/categories/${category.id}/`}>同じ分野のツールと比較する</a>
     </footer>
   </article>
 </Base>

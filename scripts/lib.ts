@@ -7,7 +7,7 @@ import { parse } from 'yaml';
 export const ROOT = fileURLToPath(new URL('..', import.meta.url));
 export const DATA = join(ROOT, 'src', 'data');
 
-export type Collection = 'tools' | 'capabilities' | 'categories' | 'scenarios';
+export type Collection = 'tools' | 'capabilities' | 'categories';
 
 export interface Entry {
   collection: Collection;

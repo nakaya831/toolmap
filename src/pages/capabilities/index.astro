@@ -9,17 +9,17 @@ const counts = capabilityToolCounts(tools);
 const hiddenCount = capabilities.filter((c) => (counts.get(c.id) ?? 0) < MIN_TOOLS_FOR_INDEX).length;
 ---
 
-<Base title="能力から探す" description="「定期的に処理を実行する」のような動詞句の索引。">
+<Base title="目的から探す" description="「定期的に処理を実行する」のような、やりたいことの動詞句から手段を引く索引。">
   <div class="stack" style="--flow: 1.5rem">
     <header class="stack" style="--flow: 0.5rem">
-      <h1>能力から探す</h1>
+      <h1>目的から探す</h1>
       <p class="lede prose">
-        ツール名ではなく「何をしたいか」の動詞句で引く索引。各能力のページに、それを持つ手段の横断比較と、選ぶときに見る軸がある。
+        分野もツール名も分からなくても、「何をしたいか」は言える。その動詞句から引く索引。各ページに、それができる手段の横断比較と、選ぶときに見る軸がある。
       </p>
       {
         hiddenCount > 0 && (
           <p class="muted" style="font-size: var(--fs-s)">
-            掲載ツールが2件未満の能力 {hiddenCount}件は、比較が成立しないため索引に出していない。
+            掲載ツールが2件未満の目的 {hiddenCount}件は、比較が成立しないため索引に出していない。
           </p>
         )
       }

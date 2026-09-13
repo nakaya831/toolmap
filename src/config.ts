@@ -1,9 +1,9 @@
 /** サイト全体の定数。SPEC.md 6.4 の閾値はここだけで変える。 */
 
 export const SITE_NAME = 'Toolmap';
-export const SITE_TAGLINE = '課題から手段へ。制約つきで。';
+export const SITE_TAGLINE = 'ソフトウェアの地図。制約つきで。';
 export const SITE_DESCRIPTION =
-  'プログラミングツール・サービスの「できること・できないこと・制約」を同じ物差しで並べた図鑑。課題から入って、選定に必要な制約知識に3クリックで到達する。';
+  'プログラミングを学び始めた人のための地図。ソフトウェアを構成する12の分野がそれぞれ何をして、どうつながっているかを解説し、各分野の代表的なツールの「できること・できないこと・限界値」を出典つきで並べる。';
 
 /** 制約表の行に「要再確認」を出す経過日数 */
 export const FRESHNESS_WARN_DAYS = 180;
@@ -38,12 +38,6 @@ export const LABELS = {
     legacy: 'レガシー',
     deprecated: '非推奨',
   },
-  fit: {
-    best: '第一候補',
-    viable: '成立する',
-    overkill: '過剰',
-    avoid: '避ける',
-  },
   group: {
     run: '実行する',
     store: '保存・検索する',
@@ -59,7 +53,6 @@ export const LABELS = {
 /** 比較表の行順（6.3）。maturity → learningCost */
 export const MATURITY_ORDER = ['stable', 'growing', 'legacy', 'deprecated'] as const;
 export const LEARNING_COST_ORDER = ['low', 'medium', 'high'] as const;
-export const FIT_ORDER = ['best', 'viable', 'overkill', 'avoid'] as const;
 export const GROUP_ORDER = [
   'run',
   'store',

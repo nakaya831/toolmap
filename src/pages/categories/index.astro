@@ -1,49 +1,54 @@
 ---
 import Base from '@/layouts/Base.astro';
 import CategoryBadge from '@/components/CategoryBadge.astro';
-import { getAll, toolsInCategory } from '@/lib/content';
+import { byId, getAll, toolsInCategory } from '@/lib/content';
 
 const { tools, categories } = await getAll();
+const toolsById = byId(tools);
 ---
 
-<Base title="分野から探す" description="12の分類と、それぞれが答える問い。">
+<Base title="分野から探す" description="12の分野。それぞれ何をする分野で、最初に何を触ればよいか。">
   <div class="stack">
-    <h1>分野から探す</h1>
-    <p class="lede prose">
-      各分類は「何を決めるための分類か」を問いの形で持つ。問いに当てはまる分類を開くと、その中のツールを同じ列で比較できる。
-    </p>
+    <header class="stack" style="--flow: 0.5rem">
+      <h1>分野から探す</h1>
+      <p class="lede prose">
+        ソフトウェアを構成する12の分野。上から順に学ぶことを想定した並び。分野同士のつながりは<a href="/map/">全体像</a>にある。
+      </p>
+    </header>
     <div class="table-wrap">
       <table class="table">
         <thead>
           <tr>
-            <th scope="col">分類</th>
-            <th scope="col">答える問い</th>
-            <th scope="col">掲載</th>
+            <th scope="col">順</th>
+            <th scope="col">分野</th>
+            <th scope="col">何をする分野か</th>
+            <th scope="col">最初に触るなら</th>
+            <th scope="col">掲載ツール</th>
           </tr>
         </thead>
         <tbody>
           {
             categories.map((c) => {
               const ts = toolsInCategory(tools, c.id);
+              const start = toolsById.get(c.data.startWith.id);
               return (
                 <tr>
+                  <td class="mono nowrap">{String(c.data.order).padStart(2, '0')}</td>
                   <th scope="row" class="nowrap">
                     <CategoryBadge id={c.id} name={c.data.name} bar />
                   </th>
                   <td>
-                    {c.data.question}
-                    <div class="muted">{c.data.summary}</div>
+                    {c.data.plain}
+                    <div class="muted">{c.data.role}</div>
                   </td>
-                  <td class="nowrap">
-                    {ts.length}件
-                    <div class="muted" style="white-space: normal">
-                      {ts.map((t, i) => (
-                        <>
-                          {i > 0 && '、'}
-                          <a href={`/tools/${t.id}/`}>{t.data.name}</a>
-                        </>
-                      ))}
-                    </div>
+                  <td class="nowrap">{start && <a href={`/tools/${start.id}/`}>{start.data.name}</a>}</td>
+                  <td>
+                    {ts.map((t, i) => (
+                      <>
+                        {i > 0 && '、'}
+                        <a href={`/tools/${t.id}/`}>{t.data.name}</a>
+                      </>
+                    ))}
                   </td>
                 </tr>
               );

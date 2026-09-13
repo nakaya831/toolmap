@@ -1,0 +1,115 @@
+---
+import Base from '@/layouts/Base.astro';
+import CategoryBadge from '@/components/CategoryBadge.astro';
+import StackMap from '@/components/StackMap.astro';
+import { byId, getAll } from '@/lib/content';
+
+const { tools, categories } = await getAll();
+const toolsById = byId(tools);
+const catsById = byId(categories);
+---
+
+<Base title="全体像" description="ソフトウェアを構成する12の分野と、そのつながり。学ぶ順番。">
+  <article class="stack" style="--flow: 2rem">
+    <header class="stack" style="--flow: 0.5rem">
+      <h1>全体像：分野はどうつながっているか</h1>
+      <p class="lede prose">
+        一つの Web サービスは、役割の違う部品を組み合わせてできている。図の箱が分野、矢印が「頼む・渡す・支える」の関係。
+      </p>
+    </header>
+
+    <StackMap categories={categories} />
+
+    <section class="section prose stack" style="--flow: 0.75rem" aria-labelledby="read-h">
+      <h2 id="read-h">図の読み方</h2>
+      <p>
+        <strong>上の段が、利用者から見えて動いている部分。</strong>利用者はブラウザで<a href="/categories/frontend/">画面</a>を見る。画面は自分ではデータを持たず、<a href="/categories/backend/">サーバー</a>に API で頼む。サーバーは<a href="/categories/datastore/">データの保存場所</a>を読み書きして、結果を画面に返す。この3つで「動くもの」ができる。
+      </p>
+      <p>
+        <strong>その3つは、どれかの<a href="/categories/language/">言語</a>で書かれている。</strong>画面は JavaScript（TypeScript）、サーバーは Python や Go や TypeScript。言語を1つ決めると、その言語で使える道具が決まる。
+      </p>
+      <p>
+        <strong>書いたものは、<a href="/categories/infrastructure/">動かす場所</a>に載せて初めて他人が使える。</strong>自分のパソコンの外にある、常に電源の入ったサーバーに置く。ファイルを置くだけの場所から、常駐するサーバー、呼ばれたときだけ動く関数まで種類がある。
+      </p>
+      <p>
+        <strong>載せた後を支える3つ。</strong>変更を壊さず届ける<a href="/categories/devops/">開発基盤</a>、動いているかを見る<a href="/categories/observability/">監視</a>、誰が入れるかを決める<a href="/categories/security/">認証</a>。個人の練習では後回しにしがちだが、公開した瞬間に必要になる。
+      </p>
+      <p>
+        <strong>周辺と利用。</strong><a href="/categories/automation/">自動化</a>と<a href="/categories/nocode/">ノーコード</a>は、上の仕組みをコードを書かずに（または最小限で）つなぐ手段。<a href="/categories/data-processing/">データ処理</a>と<a href="/categories/ai/">AI</a>は、溜まったデータを使う側で、他の分野の上に載る。
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="order-h">
+      <h2 id="order-h">学ぶ順番</h2>
+      <p class="muted prose">
+        番号は推奨の順序。1〜4 で「動くもの」が作れ、5 で公開でき、6〜8 で公開後に困らなくなる。9 以降は必要になったときでよい。
+      </p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">順</th>
+              <th scope="col">分野</th>
+              <th scope="col">何をする分野か</th>
+              <th scope="col">最初に触るなら</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              categories.map((c) => {
+                const start = toolsById.get(c.data.startWith.id);
+                return (
+                  <tr>
+                    <td class="mono nowrap">{String(c.data.order).padStart(2, '0')}</td>
+                    <th scope="row" class="nowrap">
+                      <CategoryBadge id={c.id} name={c.data.name} bar />
+                    </th>
+                    <td>{c.data.plain}</td>
+                    <td>
+                      {start && <a href={`/tools/${start.id}/`}>{start.data.name}</a>}
+                      <div class="muted">{c.data.startWhy}</div>
+                    </td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="conn-h">
+      <h2 id="conn-h">つながりの一覧</h2>
+      <p class="muted prose">図の矢印を文章にしたもの。「A → B」は A から見た B との関係。</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">分野</th>
+              <th scope="col">つながる先</th>
+              <th scope="col">どうつながるか</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              categories.flatMap((c) =>
+                c.data.connections.map((x, i) => {
+                  const to = catsById.get(x.to.id);
+                  return (
+                    <tr>
+                      <th scope="row" class="nowrap">
+                        {i === 0 ? <CategoryBadge id={c.id} name={c.data.name} /> : ''}
+                      </th>
+                      <td class="nowrap">{to && <CategoryBadge id={to.id} name={to.data.name} />}</td>
+                      <td>{x.how}</td>
+                    </tr>
+                  );
+                }),
+              )
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </article>
+</Base>

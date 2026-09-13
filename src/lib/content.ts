@@ -1,16 +1,26 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { FIT_ORDER, GROUP_ORDER, LEARNING_COST_ORDER, MATURITY_ORDER } from '@/config';
+import { GROUP_ORDER, LEARNING_COST_ORDER, MATURITY_ORDER } from '@/config';
 
 export type Tool = CollectionEntry<'tools'>;
 export type Capability = CollectionEntry<'capabilities'>;
 export type Category = CollectionEntry<'categories'>;
-export type Scenario = CollectionEntry<'scenarios'>;
 
 /** 比較表の行順（SPEC 6.3）：maturity → learningCost → name */
 export function sortTools(tools: Tool[]): Tool[] {
   return [...tools].sort((a, b) => {
     const m = MATURITY_ORDER.indexOf(a.data.maturity) - MATURITY_ORDER.indexOf(b.data.maturity);
     if (m !== 0) return m;
+    const l =
+      LEARNING_COST_ORDER.indexOf(a.data.learningCost) -
+      LEARNING_COST_ORDER.indexOf(b.data.learningCost);
+    if (l !== 0) return l;
+    return a.data.name.localeCompare(b.data.name, 'ja');
+  });
+}
+
+/** 一覧向け：学習コストの低い順 → 名前。初学者が上から読める並び */
+export function sortToolsForLearning(tools: Tool[]): Tool[] {
+  return [...tools].sort((a, b) => {
     const l =
       LEARNING_COST_ORDER.indexOf(a.data.learningCost) -
       LEARNING_COST_ORDER.indexOf(b.data.learningCost);
@@ -31,22 +41,16 @@ export function sortCapabilities(caps: Capability[]): Capability[] {
   });
 }
 
-export function sortCandidates<T extends { fit: (typeof FIT_ORDER)[number] }>(cands: T[]): T[] {
-  return [...cands].sort((a, b) => FIT_ORDER.indexOf(a.fit) - FIT_ORDER.indexOf(b.fit));
-}
-
 export async function getAll() {
-  const [tools, capabilities, categories, scenarios] = await Promise.all([
+  const [tools, capabilities, categories] = await Promise.all([
     getCollection('tools'),
     getCollection('capabilities'),
     getCollection('categories'),
-    getCollection('scenarios'),
   ]);
   return {
     tools: sortTools(tools),
     capabilities: sortCapabilities(capabilities),
     categories: sortCategories(categories),
-    scenarios: [...scenarios].sort((a, b) => a.data.title.localeCompare(b.data.title, 'ja')),
   };
 }
 
@@ -81,6 +85,9 @@ export function referencedBy(tools: Tool[], toolId: string): Tool[] {
   return sortTools(tools.filter((t) => t.data.alternatives.some((a) => a.tool.id === toolId)));
 }
 
-export function scenariosMentioning(scenarios: Scenario[], toolId: string): Scenario[] {
-  return scenarios.filter((s) => s.data.candidates.some((c) => c.tool.id === toolId));
+/** ある分類を connections で指している分類（逆参照） */
+export function connectedFrom(categories: Category[], categoryId: string) {
+  return sortCategories(categories)
+    .filter((c) => c.id !== categoryId && c.data.connections.some((x) => x.to.id === categoryId))
+    .map((c) => ({ category: c, how: c.data.connections.find((x) => x.to.id === categoryId)!.how }));
 }

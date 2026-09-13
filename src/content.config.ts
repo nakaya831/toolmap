@@ -3,7 +3,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
 /**
- * スキーマ定義。SPEC.md 第4章の写し。
+ * スキーマ定義。SPEC.md 第4章の写し（2.0）。
  * 4.4「意図的な強制」に挙げた .min(1) / 必須項目は緩めない。
  */
 
@@ -39,15 +39,26 @@ export const LAYERS = [
 export const COST_MODELS = ['free', 'free-tier', 'usage-based', 'subscription', 'license'] as const;
 export const LEARNING_COSTS = ['low', 'medium', 'high'] as const;
 export const MATURITIES = ['stable', 'growing', 'legacy', 'deprecated'] as const;
-export const FITS = ['best', 'viable', 'overkill', 'avoid'] as const;
 
 const categories = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/data/categories' }),
   schema: z.object({
     name: z.string(),
-    order: z.number(),
+    order: z.number(), // 学習の推奨順
     question: z.string(), // このカテゴリが答える問い
     summary: z.string(),
+    plain: z.string(), // 初学者向けの一言。専門用語なしで「何をする分野か」
+    role: z.string(), // 全体像の中での役割
+    connections: z
+      .array(
+        z.object({
+          to: reference('categories'),
+          how: z.string(), // 隣接分野との関係を動詞で
+        }),
+      )
+      .min(1),
+    startWith: reference('tools'), // この分野で最初に触るツール
+    startWhy: z.string(),
   }),
 });
 
@@ -102,22 +113,4 @@ const tools = defineCollection({
   }),
 });
 
-const scenarios = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/data/scenarios' }),
-  schema: z.object({
-    title: z.string(), // 利用者の言葉での課題
-    needs: z.array(reference('capabilities')).min(1),
-    candidates: z
-      .array(
-        z.object({
-          tool: reference('tools'),
-          fit: z.enum(FITS),
-          reason: z.string(),
-        }),
-      )
-      .min(2), // 単一解を提示しない。比較させる
-    updatedAt: z.coerce.date(),
-  }),
-});
-
-export const collections = { categories, capabilities, tools, scenarios };
+export const collections = { categories, capabilities, tools };

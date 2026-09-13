@@ -10,7 +10,6 @@ const LAYERS = ['language', 'runtime', 'framework', 'managed-service', 'tool', '
 const COST = ['free', 'free-tier', 'usage-based', 'subscription', 'license'] as const;
 const LEARN = ['low', 'medium', 'high'] as const;
 const MATURITY = ['stable', 'growing', 'legacy', 'deprecated'] as const;
-const FIT = ['best', 'viable', 'overkill', 'avoid'] as const;
 
 const date = z.coerce.date().refine((d) => d.getTime() <= Date.now() + 86_400_000, {
   message: '未来の日付',
@@ -31,6 +30,11 @@ const schemas = {
     order: z.number(),
     question: z.string(),
     summary: z.string(),
+    plain: z.string().min(1),
+    role: z.string().min(1),
+    connections: z.array(z.object({ to: z.string(), how: z.string().min(1) })).min(1),
+    startWith: z.string(),
+    startWhy: z.string().min(1),
   }),
   capabilities: z.object({
     name: z.string(),
@@ -59,25 +63,16 @@ const schemas = {
     verdict: z.string().min(1),
     updatedAt: date,
   }),
-  scenarios: z.object({
-    title: z.string(),
-    needs: z.array(z.string()).min(1),
-    candidates: z
-      .array(z.object({ tool: z.string(), fit: z.enum(FIT), reason: z.string().min(1) }))
-      .min(2, { message: 'candidates は2件以上（単一解を提示しない）' }),
-    updatedAt: date,
-  }),
 } satisfies Record<Collection, z.ZodTypeAny>;
 
 const ids: Record<Collection, Set<string>> = {
   tools: new Set(readCollection('tools').map((e) => e.id)),
   capabilities: new Set(readCollection('capabilities').map((e) => e.id)),
   categories: new Set(readCollection('categories').map((e) => e.id)),
-  scenarios: new Set(readCollection('scenarios').map((e) => e.id)),
 };
 
 function collectionOf(file: string): Collection {
-  const m = file.replaceAll('\\', '/').match(/src\/data\/(tools|capabilities|categories|scenarios)\//);
+  const m = file.replaceAll('\\', '/').match(/src\/data\/(tools|capabilities|categories)\//);
   if (!m) throw new Error(`src/data 配下のファイルではない: ${file}`);
   return m[1] as Collection;
 }
@@ -112,11 +107,12 @@ function validate(e: Entry): string[] {
       }
     }
   }
-  if (e.collection === 'scenarios') {
-    d.needs.forEach((c: string, i: number) => ref('capabilities', c, `needs[${i}]`));
-    d.candidates.forEach((c: any, i: number) => ref('tools', c.tool, `candidates[${i}].tool`));
-    if (!d.candidates.some((c: any) => c.fit === 'avoid' || c.fit === 'overkill'))
-      errors.push('candidates に avoid か overkill が1件もない（何を選ばないかを示す）');
+  if (e.collection === 'categories') {
+    ref('tools', d.startWith, 'startWith');
+    d.connections.forEach((c: any, i: number) => {
+      ref('categories', c.to, `connections[${i}].to`);
+      if (c.to === e.id) errors.push(`connections[${i}]: 自分自身を指している`);
+    });
   }
   return errors;
 }
@@ -130,7 +126,7 @@ const entries: Entry[] = args.length
         return { collection: collectionOf(f), id: f, file: f, data: {}, body: '', raw: '', parseError: String((e as Error).message) };
       }
     })
-  : (['categories', 'capabilities', 'tools', 'scenarios'] as Collection[]).flatMap(readCollection);
+  : (['categories', 'capabilities', 'tools'] as Collection[]).flatMap(readCollection);
 
 let failed = 0;
 const warnOnly = /値に数値が含まれない/;

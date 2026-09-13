@@ -1,0 +1,180 @@
+---
+/**
+ * 全体像の図（SPEC 5.1 の骨格を SVG で描く）。
+ * 分類名とリンク先はコンテンツから取り、配置と短い役割語はここで固定する。
+ */
+import type { Category } from '@/lib/content';
+
+interface Props {
+  categories: Category[];
+  compact?: boolean;
+}
+const { categories, compact = false } = Astro.props;
+const name = (id: string) => categories.find((c) => c.id === id)?.data.name ?? id;
+
+// 短い役割語（図の中だけで使う）
+const KW: Record<string, string> = {
+  frontend: '見せる',
+  backend: '決める・返す',
+  datastore: '覚える',
+  language: '書くための言葉',
+  infrastructure: '動かす場所',
+  devops: '届ける',
+  observability: '見守る',
+  security: '守る',
+  automation: '繰り返す',
+  nocode: '書かずに済ます',
+  'data-processing': '集計する',
+  ai: '生成・予測',
+};
+
+interface Box {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+const B: Box[] = [
+  { id: 'frontend', x: 130, y: 60, w: 220, h: 64 },
+  { id: 'backend', x: 390, y: 60, w: 220, h: 64 },
+  { id: 'datastore', x: 650, y: 60, w: 220, h: 64 },
+  { id: 'language', x: 130, y: 158, w: 740, h: 46 },
+  { id: 'infrastructure', x: 130, y: 250, w: 740, h: 56 },
+  { id: 'devops', x: 130, y: 350, w: 230, h: 56 },
+  { id: 'observability', x: 385, y: 350, w: 230, h: 56 },
+  { id: 'security', x: 640, y: 350, w: 230, h: 56 },
+  { id: 'automation', x: 130, y: 470, w: 175, h: 56 },
+  { id: 'nocode', x: 320, y: 470, w: 175, h: 56 },
+  { id: 'data-processing', x: 570, y: 470, w: 140, h: 56 },
+  { id: 'ai', x: 745, y: 470, w: 125, h: 56 },
+];
+const box = (id: string) => B.find((b) => b.id === id)!;
+const cx = (b: Box) => b.x + b.w / 2;
+---
+
+<figure class="stackmap" data-pagefind-ignore>
+  <svg
+    viewBox="0 0 900 550"
+    role="img"
+    aria-labelledby="stackmap-title"
+    xmlns="http://www.w3.org/2000/svg"
+    class:list={{ compact }}
+  >
+    <title id="stackmap-title">ソフトウェアを構成する12の分野と、そのつながり</title>
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="var(--ink)"></path>
+      </marker>
+    </defs>
+
+    {/* 利用者 */}
+    <g class="user">
+      <circle cx="52" cy="80" r="11" fill="none" stroke="var(--ink)" stroke-width="2"></circle>
+      <path d="M32 116 a20 20 0 0 1 40 0" fill="none" stroke="var(--ink)" stroke-width="2"></path>
+      <text x="52" y="140" text-anchor="middle" class="t-small">利用者</text>
+      <line x1="80" y1="92" x2={box('frontend').x - 4} y2="92" stroke="var(--ink)" stroke-width="1.5" marker-end="url(#arr)"></line>
+    </g>
+
+    {/* 上段の双方向矢印 */}
+    <line x1={box('frontend').x + box('frontend').w + 3} y1="92" x2={box('backend').x - 3} y2="92" stroke="var(--ink)" stroke-width="1.5" marker-start="url(#arr)" marker-end="url(#arr)"></line>
+    <text x={(box('frontend').x + box('frontend').w + box('backend').x) / 2} y="84" text-anchor="middle" class="t-small">API</text>
+    <line x1={box('backend').x + box('backend').w + 3} y1="92" x2={box('datastore').x - 3} y2="92" stroke="var(--ink)" stroke-width="1.5" marker-start="url(#arr)" marker-end="url(#arr)"></line>
+    <text x={(box('backend').x + box('backend').w + box('datastore').x) / 2} y="84" text-anchor="middle" class="t-small">読み書き</text>
+
+    {/* 言語 → 上段（書く） */}
+    <text x="878" y="150" text-anchor="end" class="t-small">上の3つは、この言語で書く</text>
+
+    {/* 基盤 → 上段（載せる） */}
+    <line x1="500" y1={box('infrastructure').y - 2} x2="500" y2={box('language').y + box('language').h + 2} stroke="var(--ink)" stroke-width="1.5" marker-end="url(#arr)"></line>
+    <text x="512" y="236" class="t-small">載せる</text>
+
+    {/* 下段 → 基盤 */}
+    {
+      ['devops', 'observability', 'security'].map((id, i) => (
+        <>
+          <line x1={cx(box(id))} y1={box(id).y - 2} x2={cx(box(id))} y2={box('infrastructure').y + box('infrastructure').h + 2} stroke="var(--ink)" stroke-width="1.5" marker-end="url(#arr)" />
+          <text x={cx(box(id)) + 8} y={box(id).y - 14} class="t-small">
+            {['届ける', '見守る', '入口で守る'][i]}
+          </text>
+        </>
+      ))
+    }
+
+    {/* 周辺・利用のキャプション */}
+    <text x={box('automation').x} y="452" class="t-cap">周辺：コードを書かずにつなぐ・繰り返す</text>
+    <text x={box('data-processing').x} y="452" class="t-cap">利用：溜まったデータを使う</text>
+    <line x1={box('data-processing').x + box('data-processing').w + 3} y1="498" x2={box('ai').x - 3} y2="498" stroke="var(--ink)" stroke-width="1.5" marker-end="url(#arr)"></line>
+    {/* データの保存 → データ処理（右端を回り込む） */}
+    <path d={`M ${box('datastore').x + box('datastore').w} 100 L 892 100 L 892 ${box('data-processing').y + 28} L ${box('data-processing').x + box('data-processing').w + 3} ${box('data-processing').y + 28}`} fill="none" stroke="var(--ink)" stroke-width="1" stroke-dasharray="4 3"></path>
+
+    {/* 箱 */}
+    {
+      B.map((b) => (
+        <a href={`/categories/${b.id}/`} class="box">
+          <rect x={b.x} y={b.y} width={b.w} height={b.h} fill="var(--paper-2)" stroke="var(--ink)" stroke-width="1.5" />
+          <rect x={b.x} y={b.y} width="6" height={b.h} fill={`var(--cat-${b.id})`} />
+          <text x={b.x + 16} y={b.y + (b.h > 50 ? 26 : 29)} class="t-name">
+            {name(b.id)}
+          </text>
+          {b.h > 50 && (
+            <text x={b.x + 16} y={b.y + 46} class="t-small">
+              {KW[b.id]}
+            </text>
+          )}
+          {b.h <= 50 && (
+            <text x={b.x + b.w - 14} y={b.y + 29} text-anchor="end" class="t-small">
+              {KW[b.id]}
+            </text>
+          )}
+        </a>
+      ))
+    }
+  </svg>
+  {
+    !compact && (
+      <figcaption class="muted">
+        上の段が「利用者に見えて、動いている部分」。下へ行くほど、それを支える仕組みになる。箱を押すと分野の解説へ移る。
+      </figcaption>
+    )
+  }
+</figure>
+
+<style>
+  .stackmap {
+    margin: 0;
+  }
+  .stackmap svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    font-family: var(--font-sans);
+    max-width: 900px;
+  }
+  .stackmap .t-name {
+    font-size: 15px;
+    font-weight: 700;
+    fill: var(--ink);
+  }
+  .stackmap .t-small {
+    font-size: 11.5px;
+    fill: var(--ink-2);
+  }
+  .stackmap .t-cap {
+    font-size: 12px;
+    fill: var(--ink);
+    font-weight: 700;
+  }
+  .stackmap a.box:hover rect:first-child,
+  .stackmap a.box:focus-visible rect:first-child {
+    stroke-width: 3;
+  }
+  .stackmap a.box {
+    outline: none;
+  }
+  .stackmap figcaption {
+    font-size: var(--fs-s);
+    margin-block-start: 0.5rem;
+    max-width: var(--measure);
+  }
+</style>

@@ -16,9 +16,10 @@ const canonical = new URL(path, Astro.site);
 const buildDate = new Date();
 
 const NAV = [
-  { href: '/scenarios/', label: '課題から' },
+  { href: '/map/', label: '全体像' },
   { href: '/categories/', label: '分野から' },
-  { href: '/capabilities/', label: '能力から' },
+  { href: '/tools/', label: 'ツール一覧' },
+  { href: '/capabilities/', label: '目的から' },
   { href: '/search/', label: '検索' },
   { href: '/about/', label: 'このサイト' },
 ];
@@ -65,7 +66,7 @@ const isCurrent = (href: string) => path === href || (href !== '/' && path.start
     </main>
     <footer class="site-footer" data-pagefind-ignore>
       <div class="site-footer__in">
-        <span>{SITE_NAME}：制約と出典つきの図鑑。使い方は公式ドキュメントへ。</span>
+        <span>{SITE_NAME}：分野の地図と、制約と出典つきの図鑑。使い方は公式ドキュメントへ。</span>
         <a href="/about/">掲載基準・免責</a>
         <span>ビルド {buildDate.toISOString().slice(0, 10)}</span>
       </div>

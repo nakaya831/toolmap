@@ -3,7 +3,7 @@ import { render } from 'astro:content';
 import Base from '@/layouts/Base.astro';
 import ComparisonTable from '@/components/ComparisonTable.astro';
 import CategoryBadge from '@/components/CategoryBadge.astro';
-import { byId, getAll, toolsInCategory, type Category } from '@/lib/content';
+import { byId, connectedFrom, getAll, toolsInCategory, type Category } from '@/lib/content';
 
 export async function getStaticPaths() {
   const { categories } = await getAll();
@@ -13,10 +13,17 @@ interface Props {
   category: Category;
 }
 const { category } = Astro.props;
-const { tools, capabilities } = await getAll();
+const { tools, capabilities, categories } = await getAll();
 const list = toolsInCategory(tools, category.id);
 const { Content } = await render(category);
 const hasBody = category.body && category.body.trim().length > 0;
+
+const toolsById = byId(tools);
+const catsById = byId(categories);
+const start = toolsById.get(category.data.startWith.id);
+const incoming = connectedFrom(categories, category.id);
+const prev = categories.find((c) => c.data.order === category.data.order - 1);
+const next = categories.find((c) => c.data.order === category.data.order + 1);
 
 // この分類のツールが持つ能力（横断リンク）
 const capsById = byId(capabilities);
@@ -28,22 +35,95 @@ const caps = [...capCount.entries()]
   .filter((x) => x.cap);
 ---
 
-<Base title={category.data.name} description={category.data.question}>
-  <div class="stack" style="--flow: 1.5rem">
+<Base title={category.data.name} description={category.data.plain}>
+  <article class="stack" style="--flow: 1.5rem">
     <header class="stack" style="--flow: 0.5rem">
-      <div class="meta"><CategoryBadge id={category.id} name="分類" bar link={false} /></div>
+      <div class="meta">
+        <CategoryBadge id={category.id} name={`分野 ${String(category.data.order).padStart(2, '0')}`} bar link={false} />
+        <a href="/map/">全体像に戻る</a>
+      </div>
       <h1>{category.data.name}</h1>
-      <p class="lede">{category.data.question}</p>
-      <p class="prose">{category.data.summary}</p>
+      <p class="lede" style="font-size: var(--fs-l)">{category.data.plain}</p>
+      <p class="prose">{category.data.role}。</p>
     </header>
 
-    <section class="section mt-0" aria-labelledby="cmp-h">
-      <h2 id="cmp-h">比較表（{list.length}件）</h2>
+    <section class="section mt-0 start" aria-labelledby="start-h">
+      <h2 id="start-h">最初に触るなら</h2>
+      {
+        start && (
+          <p class="prose">
+            <a href={`/tools/${start.id}/`}>
+              <strong>{start.data.name}</strong>
+            </a>
+            <span class="muted">：{start.data.oneLiner}</span>
+            <br />
+            {category.data.startWhy}
+          </p>
+        )
+      }
+    </section>
+
+    <section class="section" aria-labelledby="conn-h">
+      <h2 id="conn-h">隣の分野とのつながり</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">分野</th>
+              <th scope="col">どうつながるか</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              category.data.connections.map((x) => {
+                const to = catsById.get(x.to.id);
+                return (
+                  <tr>
+                    <th scope="row" class="nowrap">
+                      {to && <CategoryBadge id={to.id} name={to.data.name} />}
+                    </th>
+                    <td>{x.how}</td>
+                  </tr>
+                );
+              })
+            }
+            {
+              incoming.map(({ category: from, how }) => (
+                <tr>
+                  <th scope="row" class="nowrap">
+                    <CategoryBadge id={from.id} name={from.data.name} />
+                    <span class="muted">（から見ると）</span>
+                  </th>
+                  <td>{how}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {
+      hasBody && (
+        <section class="section prose" aria-labelledby="body-h">
+          <h2 id="body-h">この分野を理解する</h2>
+          <div class="stack" style="--flow: 0.75rem">
+            <Content />
+          </div>
+        </section>
+      )
+    }
+
+    <section class="section" aria-labelledby="cmp-h">
+      <h2 id="cmp-h">この分野のツール（{list.length}件）</h2>
+      <p class="muted" style="font-size: var(--fs-s)">
+        同じ列で比較できる。「主要制約」は各ツールで最も先に当たる限界。
+      </p>
       {
         list.length > 0 ? (
           <ComparisonTable tools={list} caption={`${category.data.name} の比較`} />
         ) : (
-          <p class="muted">この分類にはまだツールが掲載されていません。</p>
+          <p class="muted">この分野にはまだツールが掲載されていません。</p>
         )
       }
     </section>
@@ -51,7 +131,7 @@ const caps = [...capCount.entries()]
     {
       list.length > 0 && (
         <section class="section" aria-labelledby="v-h">
-          <h2 id="v-h">選定判断の要約</h2>
+          <h2 id="v-h">どれを選ぶか</h2>
           <div class="table-wrap">
             <table class="table">
               <thead>
@@ -79,15 +159,15 @@ const caps = [...capCount.entries()]
     {
       caps.length > 0 && (
         <section class="section" aria-labelledby="caps-h">
-          <h2 id="caps-h">この分類が担う能力</h2>
+          <h2 id="caps-h">この分野が担う目的</h2>
           <p class="muted" style="font-size: var(--fs-s)">
-            能力ページでは、他の分類のツールも含めて横断比較できる。
+            目的ごとのページでは、他の分野のツールも含めて横断比較できる。
           </p>
           <ul>
             {caps.map(({ cap, n }) => (
               <li>
                 <a href={`/capabilities/${cap.id}/`}>{cap.data.name}</a>
-                <span class="muted">（この分類から {n}件）</span>
+                <span class="muted">（この分野から {n}件）</span>
               </li>
             ))}
           </ul>
@@ -95,12 +175,22 @@ const caps = [...capCount.entries()]
       )
     }
 
-    {
-      hasBody && (
-        <section class="section prose">
-          <Content />
-        </section>
-      )
-    }
-  </div>
+    <footer class="section meta">
+      {prev && <a href={`/categories/${prev.id}/`}>前：{prev.data.name}</a>}
+      {next && <a href={`/categories/${next.id}/`}>次：{next.data.name}</a>}
+      <a href="/categories/">分野の一覧</a>
+    </footer>
+  </article>
 </Base>
+
+<style>
+  .start {
+    border-left: 4px solid var(--ink);
+    padding-inline-start: 1rem;
+  }
+  .start h2 {
+    border: 0;
+    margin: 0 0 0.25rem;
+    padding: 0;
+  }
+</style>

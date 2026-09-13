@@ -13,10 +13,9 @@ interface Props {
   capability: Capability;
 }
 const { capability } = Astro.props;
-const { tools, categories, scenarios } = await getAll();
+const { tools, categories } = await getAll();
 const list = toolsWithCapability(tools, capability.id);
 const catsById = byId(categories);
-const related = scenarios.filter((s) => s.data.needs.some((n) => n.id === capability.id));
 const { Content } = await render(capability);
 const hasBody = capability.body && capability.body.trim().length > 0;
 ---
@@ -24,13 +23,13 @@ const hasBody = capability.body && capability.body.trim().length > 0;
 <Base title={capability.data.name} description={capability.data.question}>
   <div class="stack" style="--flow: 1.5rem">
     <header class="stack" style="--flow: 0.5rem">
-      <div class="meta"><span>能力：{LABELS.group[capability.data.group]}</span></div>
+      <div class="meta"><span>目的：{LABELS.group[capability.data.group]}</span></div>
       <h1>{capability.data.name}</h1>
       <p class="lede">「{capability.data.question}」</p>
     </header>
 
     <section class="section mt-0" aria-labelledby="ax-h">
-      <h2 id="ax-h">この能力で選ぶときに見る軸</h2>
+      <h2 id="ax-h">この目的で選ぶときに見る軸</h2>
       <ol class="axes">
         {capability.data.axes.map((a) => <li>{a}</li>)}
       </ol>
@@ -40,7 +39,7 @@ const hasBody = capability.body && capability.body.trim().length > 0;
     </section>
 
     <section class="section" aria-labelledby="cmp-h">
-      <h2 id="cmp-h">この能力を持つ手段（{list.length}件）</h2>
+      <h2 id="cmp-h">この目的に使える手段（{list.length}件）</h2>
       {
         list.length > 0 ? (
           <ComparisonTable
@@ -60,21 +59,6 @@ const hasBody = capability.body && capability.body.trim().length > 0;
         )
       }
     </section>
-
-    {
-      related.length > 0 && (
-        <section class="section" aria-labelledby="sc-h">
-          <h2 id="sc-h">この能力を必要とする課題</h2>
-          <ul>
-            {related.map((s) => (
-              <li>
-                <a href={`/scenarios/${s.id}/`}>{s.data.title}</a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )
-    }
 
     {
       hasBody && (
