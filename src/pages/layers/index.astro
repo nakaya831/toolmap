@@ -1,13 +1,15 @@
 ---
 import Base from '@/layouts/Base.astro';
+import CategoryBadge from '@/components/CategoryBadge.astro';
 import LayerMap from '@/components/LayerMap.astro';
-import { byId, getAll, toolsInLayer } from '@/lib/content';
+import { LABELS } from '@/config';
+import { byId, getAll, sortToolsForLearning, toolsInLayer } from '@/lib/content';
 
-const { tools, layers } = await getAll();
-const layersById = byId(layers);
+const { tools, layers, categories } = await getAll();
+const catsById = byId(categories);
 ---
 
-<Base title="種別から学ぶ" description="言語・実行環境・フレームワーク・ツール・マネージドサービス・プロトコル。道具の「性質」で分けた6つの種別と、その関係。">
+<Base title="種別から学ぶ" description="言語・実行環境・フレームワーク・ツール・マネージドサービス・プロトコル。道具の「性質」で分けた6つの種別と、それぞれのツール一覧。">
   <article class="stack" style="--flow: 2rem">
     <header class="stack" style="--flow: 0.5rem">
       <h1>種別から学ぶ：道具の「性質」で分ける</h1>
@@ -39,7 +41,7 @@ const layersById = byId(layers);
                   <tr>
                     <td class="mono nowrap">{String(l.data.order).padStart(2, '0')}</td>
                     <th scope="row" class="nowrap">
-                      <a href={`/layers/${l.id}/`}>{l.data.name}</a>
+                      <a href={`#l-${l.id}`}>{l.data.name}</a>
                     </th>
                     <td>{l.data.plain}</td>
                     <td>{l.data.role}</td>
@@ -47,37 +49,6 @@ const layersById = byId(layers);
                   </tr>
                 );
               })
-            }
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="rel-h">
-      <h2 id="rel-h">種別同士の関係</h2>
-      <p class="muted prose">図の矢印を文章にしたもの。「A → B」は A から見た B との関係。</p>
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th scope="col">種別</th>
-              <th scope="col">関係する種別</th>
-              <th scope="col">どういう関係か</th>
-            </tr>
-          </thead>
-          <tbody>
-            {
-              layers.flatMap((l) =>
-                l.data.relations.map((r, i) => (
-                  <tr>
-                    <th scope="row" class="nowrap">{i === 0 ? <a href={`/layers/${l.id}/`}>{l.data.name}</a> : ''}</th>
-                    <td class="nowrap">
-                      <a href={`/layers/${r.to.id}/`}>{layersById.get(r.to.id)?.data.name ?? r.to.id}</a>
-                    </td>
-                    <td>{r.how}</td>
-                  </tr>
-                )),
-              )
             }
           </tbody>
         </table>
@@ -93,8 +64,77 @@ const layersById = byId(layers);
         種別は、制約の現れ方も決める。フレームワークやツールの制約は「仕組み上の性質」として現れ、マネージドサービスの制約は「何件まで」「何回まで」という数字と料金で現れる。プロトコルの制約は「仕様がそう決めている」形で現れる。
       </p>
       <p>
-        学ぶ順番の目安：まず<a href="/layers/language/">言語</a>と<a href="/layers/framework/">フレームワーク</a>で「書く」を覚え、<a href="/layers/tool/">ツール</a>で「動かす」を覚え、公開するときに<a href="/layers/managed-service/">マネージドサービス</a>を借りる。<a href="/layers/runtime/">実行環境</a>と<a href="/layers/protocol/">プロトコル</a>は、必要になったときに読めばよい。
+        学ぶ順番の目安：まず<a href="#l-language">言語</a>と<a href="#l-framework">フレームワーク</a>で「書く」を覚え、<a href="#l-tool">ツール</a>で「動かす」を覚え、公開するときに<a href="#l-managed-service">マネージドサービス</a>を借りる。<a href="#l-runtime">実行環境</a>と<a href="#l-protocol">プロトコル</a>は、必要になったときに読めばよい。
       </p>
     </section>
+
+    {
+      layers.map((l) => {
+        const list = sortToolsForLearning(toolsInLayer(tools, l.id));
+        return (
+          <section class="section layer" aria-labelledby={`l-${l.id}`}>
+            <h2 id={`l-${l.id}`}>
+              <span class="mono muted">{String(l.data.order).padStart(2, '0')}</span> {l.data.name}
+              <span class="muted layer__plain">{l.data.plain}</span>
+            </h2>
+            <p class="prose">{l.data.role}。</p>
+            <dl class="kv">
+              <dt>いつ選ぶか</dt>
+              <dd>
+                <p>{l.data.chooseWhen}</p>
+              </dd>
+            </dl>
+            <h3 class="layer__sub">この種別のツール（{list.length}件）</h3>
+            {list.length === 0 && <p class="muted">まだ掲載ツールがありません。</p>}
+            {list.length > 0 && (
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">ツール</th>
+                      <th scope="col">分野</th>
+                      <th scope="col">一行で言うと</th>
+                      <th scope="col">学習</th>
+                      <th scope="col">料金</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {list.map((t) => {
+                      const cat = catsById.get(t.data.category.id);
+                      return (
+                        <tr>
+                          <th scope="row" class="nowrap">
+                            <a href={`/tools/${t.id}/`}>{t.data.name}</a>
+                          </th>
+                          <td class="nowrap">{cat && <CategoryBadge id={cat.id} name={cat.data.name} />}</td>
+                          <td>{t.data.oneLiner}</td>
+                          <td class="nowrap">{LABELS.learningCost[t.data.learningCost]}</td>
+                          <td class="nowrap">{LABELS.costModel[t.data.cost.model]}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p class="muted" style="font-size: var(--fs-s)">
+              <a href={`/layers/${l.id}/`}>{l.data.name} の解説へ</a>
+            </p>
+          </section>
+        );
+      })
+    }
   </article>
 </Base>
+
+<style>
+  .layer__plain {
+    font-weight: 400;
+    font-size: var(--fs-s);
+    margin-inline-start: 0.75em;
+  }
+  .layer__sub {
+    margin-block-start: 1rem;
+    margin-block-end: 0.4rem;
+  }
+</style>
