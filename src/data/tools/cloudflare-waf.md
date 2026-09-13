@@ -23,20 +23,15 @@ constraints:
     impact: ログインとAPIなど複数のエンドポイントに個別のレート制限をかけたい場合、無料プランでは1箇所にしか設定できない
     source: https://developers.cloudflare.com/waf/rate-limiting-rules/
     verifiedAt: 2026-09-13
-  - label: プラン別の月額料金
-    value: Free $0、Pro $20/月（年払い、月払いは$25）、Business $200/月（年払い、月払いは$250）
-    impact: ルール数やボット対策の高度化はプラン変更に直結し、Businessまで上げると月額が一気に10倍規模になる
-    source: https://www.cloudflare.com/plans/network-cdn/
-    verifiedAt: 2026-09-13
   - label: ボット対策のプラン差
-    value: Freeは基本的な「Simple bots」対策のみ。Businessで「Sophisticated bots + basic bot analytics」に対応
-    impact: ヘッドレスブラウザや分散型など高度化したボットへの対策は無料プランでは不十分で、実害が出た時点でBusiness以上への移行を検討することになる
-    source: https://www.cloudflare.com/plans/network-cdn/
+    value: Free は Bot Fight Mode（クラウド事業者やヘッドレスブラウザ由来の単純なボットが対象、ドメイン全体に一律適用）。Super Bot Fight Mode は Pro / Business / Enterprise のみ
+    impact: 無料プランではボット種別ごとの動作設定や静的リソースの保護ができない。ヘッドレスブラウザ以外の高度なボットへの対策が必要になった時点で Pro 以上への移行を検討する
+    source: https://developers.cloudflare.com/bots/get-started/super-bot-fight-mode/
     verifiedAt: 2026-09-13
   - label: DDoS保護の範囲
-    value: 全プランで「Unmetered DDoS Protection」を提供。L3ネットワークDDoS対策（Magic Transit）はContract（Enterprise契約）限定
-    impact: アプリケーション層（L7）のDDoSは無料プランでも保護されるが、ネットワーク層への大規模攻撃に個別対応が必要な場合はEnterprise契約が前提になる
-    source: https://www.cloudflare.com/plans/network-cdn/
+    value: L3・L4・L7 の DDoS 保護を、全プラン・全サービスの全顧客に「unmetered and unlimited」で提供
+    impact: 攻撃を受けても帯域課金や上限は発生しない。ただし高度な TCP / DNS 攻撃向けの Advanced DDoS Protection は別製品で、無料プランの範囲ではない
+    source: https://developers.cloudflare.com/ddos-protection/about/
     verifiedAt: 2026-09-13
 pitfalls:
   - カスタムルールとレート制限ルールは別枠のカウントであることに気づかず、無料プランの上限を勘違いする
@@ -44,8 +39,8 @@ pitfalls:
   - レート制限ルールの上限個数が少ないため、複数エンドポイントを1ルールの複雑な条件式に無理に詰め込み可読性が落ちる
 cost:
   model: free-tier
-  note: Freeでも基本的なWAF（カスタムルール5件・レート制限1件）とDDoS保護は無料で使える。課金が跳ねるのはルール数の拡張とボット対策の高度化で、Proで$20/月、Businessで$200/月（いずれも年払い時）に段階的に上がる
-  source: https://www.cloudflare.com/plans/network-cdn/
+  note: Free でも基本的な WAF（カスタムルール5件・レート制限1件）と DDoS 保護は無料。課金が跳ねるのはルール数の拡張とボット対策の高度化で、Pro → Business とプランを上げるたびに月額が段階的に上がる。金額は公式プランページで確認する
+  source: https://www.cloudflare.com/plans/
   verifiedAt: 2026-09-13
 learningCost: medium
 maturity: stable
